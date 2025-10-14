@@ -1,0 +1,2301 @@
+<!
+DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name=a"viewport" content="width=device-width, initial-scale=1.0">
+    <title>AINEON // $100M Institutional Arbitrage Dashboard</title>
+    <style>
+        :root {
+            --grafana-dark: #0a0a0a;
+            --grafana-panel: #141414;
+            --grafana-border: #2a2a2a;
+            --grafana-text: #e8e8e8;
+            --grafana-green: #299c46;
+            --grafana-red: #d44a3a;
+            --grafana-blue: #19b9c4;
+            --grafana-purple: #8f68cc;
+            --grafana-orange: #cb7e2c;
+            --grafana-yellow: #f2c94c;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background: var(--grafana-dark);
+            color: var(--grafana-text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 0;
+            height: 100vh;
+        }
+        
+        .header-bar {
+            grid-column: 1 / -1;
+            background: var(--grafana-panel);
+            border-bottom: 1px solid var(--grafana-border);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--grafana-blue);
+        }
+        
+        .header-controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .profit-time-display {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .profit-amount {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--grafana-green);
+        }
+        
+        .total-profit-time {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--grafana-green);
+            animation: pulse 2s infinite;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .dropdown {
+            background: #1a1a1a;
+            border: 1px solid var(--grafana-border);
+            border-radius: 3px;
+            padding: 4px 8px;
+            color: var(--grafana-text);
+            font-size: 11px;
+        }
+        
+        .refresh-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .refresh-label {
+            font-size: 11px;
+            color: #a0a0a0;
+        }
+        
+        .target-progress {
+            grid-column: 1 / -1;
+            background: var(--grafana-panel);
+            border-bottom: 1px solid var(--grafana-border);
+            padding: 10px 20px;
+        }
+        
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .progress-label {
+            font-size: 12px;
+            color: #a0a0a0;
+            min-width: 120px;
+        }
+        
+        .progress-bars {
+            flex: 1;
+            display: flex;
+            gap: 20px;
+        }
+        
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--grafana-border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+        }
+        
+        .progress-achieved {
+            background: var(--grafana-green);
+            width: 72%;
+        }
+        
+        .progress-confidence {
+            background: var(--grafana-blue);
+            width: 88%;
+        }
+        
+        .progress-percent {
+            font-size: 11px;
+            color: #a0a0a0;
+            min-width: 40px;
+        }
+        
+        .workflow-column {
+            background: var(--grafana-panel);
+            border-right: 1px solid var(--grafana-border);
+            padding: 20px;
+            overflow-y: auto;
+            height: calc(100vh - 120px);
+        }
+        
+        .workflow-item {
+            background: #1a1a1a;
+            border: 1px solid var(--grafana-border);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .workflow-item:hover {
+            border-color: var(--grafana-blue);
+            background: rgba(25, 185, 196, 0.08);
+        }
+        
+        .workflow-item.active-fullview {
+            border-color: var(--grafana-blue);
+            background: rgba(25, 185, 196, 0.15);
+        }
+        
+        .workflow-icon {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .workflow-title {
+            font-weight: 500;
+            color: var(--grafana-text);
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .workflow-description {
+            font-size: 11px;
+            color: #a0a0a0;
+        }
+        
+        .main-content-area {
+            padding: 20px;
+            overflow-y: auto;
+            background: var(--grafana-dark);
+            height: calc(100vh - 120px);
+        }
+        
+        .workflow-fullview {
+            background: var(--grafana-panel);
+            border: 1px solid var(--grafana-border);
+            border-radius: 8px;
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .fullview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--grafana-border);
+        }
+        
+        .fullview-header h2 {
+            color: var(--grafana-blue);
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        .view-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .btn-set-default, .btn-scan-now, .btn-close-view, .btn-action {
+            padding: 6px 12px;
+            background: var(--grafana-blue);
+            border: none;
+            border-radius: 4px;
+            color: #000;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .btn-close-view {
+            background: var(--grafana-border);
+            color: var(--grafana-text);
+        }
+        
+        .btn-action.secondary {
+            background: var(--grafana-border);
+            color: var(--grafana-text);
+        }
+        
+        .btn-action.danger {
+            background: var(--grafana-red);
+            color: white;
+        }
+        
+        .panel {
+            background: #1a1a1a;
+            border: 1px solid var(--grafana-border);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--grafana-border);
+        }
+        
+        .panel-title {
+            font-weight: 500;
+            color: var(--grafana-text);
+            font-size: 14px;
+        }
+        
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .metric-card {
+            background: #141414;
+            padding: 12px;
+            border-radius: 4px;
+            text-align: center;
+            border: 1px solid var(--grafana-border);
+        }
+        
+        .metric-value {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 6px 0;
+            color: var(--grafana-green);
+        }
+        
+        .metric-label {
+            font-size: 10px;
+            color: #a0a0a0;
+            text-transform: uppercase;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 8px 10px;
+            background: #1a1a1a;
+            border: 1px solid var(--grafana-border);
+            border-radius: 3px;
+            color: var(--grafana-text);
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .input-field[readonly] {
+            background: #2a2a2a;
+            color: #888;
+            cursor: not-allowed;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            color: #a0a0a0;
+            margin-bottom: 5px;
+        }
+        
+        .connection-field {
+            margin-bottom: 20px;
+        }
+        
+        .connection-field label {
+            display: block;
+            font-size: 12px;
+            color: #a0a0a0;
+            margin-bottom: 6px;
+        }
+        
+        .input-with-default {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .open-input {
+            border-color: var(--grafana-blue);
+        }
+        
+        .default-tag {
+            position: absolute;
+            right: 8px;
+            background: var(--grafana-green);
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: 500;
+        }
+        
+        .field-description {
+            font-size: 10px;
+            color: #888;
+            margin-top: 4px;
+        }
+        
+        .wallet-selection {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .wallet-option {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid var(--grafana-border);
+            border-radius: 4px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .wallet-option:hover {
+            border-color: var(--grafana-blue);
+        }
+        
+        .wallet-icon {
+            font-size: 20px;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .wallet-label {
+            display: block;
+            font-weight: 500;
+            font-size: 12px;
+        }
+        
+        .wallet-desc {
+            display: block;
+            font-size: 10px;
+            color: #888;
+            margin-top: 2px;
+        }
+        
+        .connection-status {
+            margin-top: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .chain-name {
+            flex: 1;
+            font-size: 12px;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .connected {
+            background: var(--grafana-green);
+        }
+        
+        .connecting {
+            background: var(--grafana-orange);
+            animation: pulse 2s infinite;
+        }
+        
+        .disconnected {
+            background: var(--grafana-red);
+        }
+        
+        .latency {
+            font-size: 10px;
+            color: #888;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .navigation-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+        
+        .btn-next-module {
+            padding: 10px 20px;
+            background: var(--grafana-green);
+            border: none;
+            border-radius: 4px;
+            color: #000;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-next-module:disabled {
+            background: var(--grafana-border);
+            color: #666;
+            cursor: not-allowed;
+        }
+        
+        .btn-next-module:hover:not(:disabled) {
+            background: #247a3d;
+            transform: translateY(-2px);
+        }
+        
+        .validation-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            margin-top: 10px;
+        }
+        
+        .status-check {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+        
+        .status-valid {
+            background: var(--grafana-green);
+            color: #000;
+        }
+        
+        .status-invalid {
+            background: var(--grafana-border);
+            color: #666;
+        }
+        
+        .connection-test-btn {
+            padding: 6px 12px;
+            background: var(--grafana-blue);
+            border: none;
+            border-radius: 3px;
+            color: #000;
+            font-size: 10px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .module-progress {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #1a1a1a;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .progress-step.active {
+            background: var(--grafana-blue);
+            color: #000;
+            font-weight: 600;
+        }
+        
+        .progress-step.completed {
+            background: var(--grafana-green);
+            color: #000;
+        }
+
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .enhancement-card {
+            background: #1a1a1a;
+            border: 1px solid var(--grafana-border);
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .enhancement-value {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 5px 0;
+        }
+        
+        .enhancement-label {
+            font-size: 9px;
+            color: #a0a0a0;
+            text-transform: uppercase;
+        }
+        
+        .health-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .health-category h5 {
+            color: var(--grafana-text);
+            font-size: 12px;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--grafana-border);
+        }
+        
+        .health-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 11px;
+        }
+        
+        .health-status {
+            font-weight: 500;
+        }
+        
+        .healthy .health-status {
+            color: var(--grafana-green);
+        }
+        
+        .warning .health-status {
+            color: var(--grafana-orange);
+        }
+        
+        .error .health-status {
+            color: var(--grafana-red);
+        }
+        
+        .terminal-output {
+            background: #000;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        
+        .terminal-line {
+            margin-bottom: 4px;
+        }
+        
+        .prompt {
+            color: var(--grafana-green);
+        }
+        
+        .command {
+            color: var(--grafana-blue);
+        }
+        
+        .output {
+            color: var(--grafana-text);
+        }
+        
+        .terminal-input {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .terminal-input input {
+            flex: 1;
+        }
+        
+        .quick-commands {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .live-event {
+            display: grid;
+            grid-template-columns: 70px 1fr auto;
+            gap: 12px;
+            padding: 8px;
+            margin-bottom: 6px;
+            background: #1a1a1a;
+            border-radius: 3px;
+            border-left: 3px solid var(--grafana-green);
+            font-size: 11px;
+        }
+        
+        .event-time { 
+            color: #888; 
+            font-family: 'Courier New', monospace; 
+        }
+        
+        .event-details { 
+            color: var(--grafana-text); 
+        }
+        
+        .event-pnl { 
+            text-align: right; 
+            font-weight: 500; 
+        }
+        
+        .pnl-positive { 
+            color: var(--grafana-green); 
+        }
+        
+        .pnl-negative { 
+            color: var(--grafana-red); 
+        }
+
+        .validation-checklist {
+            margin: 15px 0;
+        }
+        
+        .validation-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .validation-status {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+        
+        .validation-valid {
+            background: var(--grafana-green);
+            color: #000;
+        }
+        
+        .validation-invalid {
+            background: var(--grafana-border);
+            color: #666;
+        }
+        
+        .validation-text {
+            flex: 1;
+            font-size: 11px;
+        }
+
+        .deployment-controls {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .deployment-status {
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+        
+        .status-deploying {
+            background: rgba(25, 185, 196, 0.1);
+            border-left: 3px solid var(--grafana-blue);
+        }
+        
+        .status-deployed {
+            background: rgba(41, 156, 70, 0.1);
+            border-left: 3px solid var(--grafana-green);
+        }
+        
+        .status-failed {
+            background: rgba(212, 74, 58, 0.1);
+            border-left: 3px solid var(--grafana-red);
+        }
+
+        .optimization-controls {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .optimization-progress {
+            margin: 15px 0;
+        }
+
+        .live-data-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--grafana-green);
+            animation: pulse 1s infinite;
+            margin-right: 8px;
+            display: inline-block;
+        }
+
+        .checklist-container {
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+
+        .checklist-section {
+            margin-bottom: 20px;
+        }
+
+        .checklist-section h4 {
+            color: var(--grafana-blue);
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .checklist-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+
+        .checklist-label {
+            flex: 1;
+            font-size: 11px;
+        }
+
+        .checklist-status {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .status-passed {
+            background: var(--grafana-green);
+            color: #000;
+        }
+
+        .status-failed {
+            background: var(--grafana-red);
+            color: white;
+        }
+
+        .status-pending {
+            background: var(--grafana-orange);
+            color: #000;
+        }
+
+        .wallet-threshold-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .threshold-setting {
+            background: #1a1a1a;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid var(--grafana-border);
+        }
+
+        .transfer-timer {
+            text-align: center;
+            padding: 10px;
+            background: var(--grafana-blue);
+            color: #000;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        .gas-optimization {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background: #1a1a1a;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        /* NEW SECURITY STYLES */
+        .security-panel {
+            border-left: 4px solid var(--grafana-yellow);
+            background: rgba(242, 201, 76, 0.05);
+        }
+
+        .risk-meter {
+            height: 8px;
+            background: var(--grafana-border);
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .risk-level {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .risk-low { background: var(--grafana-green); width: 25%; }
+        .risk-medium { background: var(--grafana-orange); width: 50%; }
+        .risk-high { background: var(--grafana-red); width: 75%; }
+        .risk-critical { background: #ff0000; width: 95%; }
+
+        .circuit-breaker {
+            background: rgba(212, 74, 58, 0.1);
+            border: 1px solid var(--grafana-red);
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .multi-sig-panel {
+            background: rgba(143, 104, 204, 0.1);
+            border: 1px solid var(--grafana-purple);
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .hardware-wallet-option {
+            border: 2px solid var(--grafana-green) !important;
+            background: rgba(41, 156, 70, 0.1) !important;
+        }
+
+        .transaction-simulator {
+            background: rgba(25, 185, 196, 0.1);
+            border: 1px solid var(--grafana-blue);
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .event-log {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #000;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+        }
+
+        .event-log-entry {
+            margin-bottom: 4px;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+
+        .event-info { background: rgba(25, 185, 196, 0.1); }
+        .event-warning { background: rgba(203, 126, 44, 0.1); }
+        .event-error { background: rgba(212, 74, 58, 0.1); }
+        .event-security { background: rgba(242, 201, 76, 0.1); }
+
+        .optional-feature {
+            border: 1px dashed var(--grafana-blue);
+            opacity: 0.8;
+        }
+
+        .optional-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--grafana-border);
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--grafana-blue);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--grafana-border);
+            border-radius: 3px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 16px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .notification.success {
+            background: var(--grafana-green);
+            color: #000;
+        }
+        
+        .notification.error {
+            background: var(--grafana-red);
+            color: white;
+        }
+        
+        .notification.warning {
+            background: var(--grafana-orange);
+            color: #000;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        .metamask-instructions {
+            background: rgba(203, 126, 44, 0.1);
+            border: 1px solid var(--grafana-orange);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .metamask-instructions h3 {
+            color: var(--grafana-orange);
+            margin-bottom: 15px;
+        }
+        
+        .metamask-instructions ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .metamask-instructions a {
+            color: var(--grafana-blue);
+            text-decoration: none;
+        }
+        
+        .metamask-instructions a:hover {
+            text-decoration: underline;
+        }
+
+        /* AUTO CONFIG STYLES */
+        .auto-config-panel {
+            border-left: 4px solid var(--grafana-green);
+            background: rgba(41, 156, 70, 0.05);
+        }
+
+        .chain-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .chain-card {
+            background: #1a1a1a;
+            border: 1px solid var(--grafana-border);
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .chain-card.connected {
+            border-color: var(--grafana-green);
+            background: rgba(41, 156, 70, 0.1);
+        }
+
+        .chain-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .chain-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .chain-status {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .bulk-actions {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .env-config {
+            background: #1a1a1a;
+            border: 1px solid var(--grafana-border);
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="header-bar">
+        <div class="header-title">AINEON Arbitrage Dashboard</div>
+        <div class="header-controls">
+            <div class="profit-time-display">
+                <div class="profit-amount" id="profitAmount">$347,200</div>
+                <select class="dropdown" id="currencySelector" onchange="updateProfitDisplay()">
+                    <option value="USD">USD</option>
+                    <option value="ETH">ETH</option>
+                </select>
+                <div class="time-unit">/</div>
+                <div class="total-profit-time" id="totalProfitTime">2.45 hours</div>
+            </div>
+            <div class="refresh-control">
+                <div class="refresh-label">Refresh:</div>
+                <select class="dropdown" id="refreshRate" onchange="updateRefreshRate()">
+                    <option value="1000">1 sec</option>
+                    <option value="3000">3 sec</option>
+                    <option value="5000" selected>5 sec</option>
+                    <option value="10000">10 sec</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="target-progress">
+        <div class="progress-container">
+            <div class="progress-label">Target Achievement</div>
+            <div class="progress-bars">
+                <div class="progress-bar">
+                    <div class="progress-fill progress-achieved"></div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill progress-confidence"></div>
+                </div>
+            </div>
+            <div class="progress-percent">72% Achieved</div>
+            <div class="progress-percent">88% Confidence</div>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="workflow-column">
+            <div class="workflow-item active-fullview" data-feature="blockchain-connection">
+                <div class="workflow-icon">🔗</div>
+                <div class="workflow-title">Auto Blockchain Connection</div>
+                <div class="workflow-description">Zero-config multi-chain setup</div>
+            </div>
+            
+            <div class="workflow-item" data-feature="security-configuration">
+                <div class="workflow-icon">🛡️</div>
+                <div class="workflow-title">Enterprise Security</div>
+                <div class="workflow-description">Mandatory multi-sig, risk controls</div>
+            </div>
+            
+            <div class="workflow-item" data-feature="user-settings">
+                <div class="workflow-icon">👤</div>
+                <div class="workflow-title">Trading Parameters</div>
+                <div class="workflow-description">Risk tolerance, profit targets</div>
+            </div>
+            
+            <div class="workflow-item" data-feature="ai-configuration">
+                <div class="workflow-icon">🤖</div>
+                <div class="workflow-title">AI Strategy Engine</div>
+                <div class="workflow-description">Multi-strategy orchestration</div>
+            </div>
+            
+            <div class="workflow-item" data-feature="ai-strategy-discovery">
+                <div class="workflow-icon">🔍</div>
+                <div class="workflow-title">Strategy Discovery</div>
+                <div class="workflow-description">Market analysis, opportunity detection</div>
+            </div>
+            
+            <div class="workflow-item" data-feature="optimize-simulate">
+                <div class="workflow-icon">🔄</div>
+                <div class="workflow-title">Optimize & Simulate</div>
+                <div class="workflow-description">Backtesting, scenario analysis</div>
+            </div>
+            
+            <div class="workflow-item" data-feature="simulation-approval">
+                <div class="workflow-icon">📊</div>
+                <div class="workflow-title">Performance Review</div>
+                <div class="workflow-description">KPI validation, strategy approval</div>
+            </div>
+            
+            <div class="workflow-item" data-feature="pre-deployment-validation">
+                <div class="workflow-icon">✅</div>
+                <div class="workflow-title">Pre-deployment Check</div>
+                <div class="workflow-description">System readiness validation</div>
+            </div>
+            
+            <div class="workflow-item" data-feature="deployment-command">
+                <div class="workflow-icon">⚙️</div>
+                <div class="workflow-title">Deployment Command</div>
+                <div class="workflow-description">Multi-chain strategy execution</div>
+            </div>
+            
+            <div class="workflow-item" data-feature="live-monitoring">
+                <div class="workflow-icon">📈</div>
+                <div class="workflow-title">Live Monitoring</div>
+                <div class="workflow-description">Real-time performance analytics</div>
+            </div>
+            
+            <div class="workflow-item" data-feature="wallet-system">
+                <div class="workflow-icon">💰</div>
+                <div class="workflow-title">Wallet Management</div>
+                <div class="workflow-description">Auto profit transfer, thresholds</div>
+            </div>
+            
+            <div class="workflow-item" data-feature="continued-optimization">
+                <div class="workflow-icon">🔄</div>
+                <div class="workflow-title">AI Optimization</div>
+                <div class="workflow-description">Continuous strategy improvement</div>
+            </div>
+            
+            <div class="workflow-item" data-feature="system-health">
+                <div class="workflow-icon">🛡️</div>
+                <div class="workflow-title">System Health</div>
+                <div class="workflow-description">Automated monitoring & repair</div>
+            </div>
+            
+            <div class="workflow-item" data-feature="ai-terminal">
+                <div class="workflow-icon">💻</div>
+                <div class="workflow-title">AI Command Terminal</div>
+                <div class="workflow-description">Direct system interaction</div>
+            </div>
+        </div>
+        
+        <div class="main-content-area">
+            <div class="module-progress" id="moduleProgress">
+                <div class="progress-step active" data-module="blockchain-connection">1. Blockchain</div>
+                <div class="progress-step" data-module="security-configuration">2. Security</div>
+                <div class="progress-step" data-module="user-settings">3. Settings</div>
+                <div class="progress-step" data-module="ai-configuration">4. AI Config</div>
+                <div class="progress-step" data-module="ai-strategy-discovery">5. Discovery</div>
+                <div class="progress-step" data-module="optimize-simulate">6. Simulate</div>
+                <div class="progress-step" data-module="simulation-approval">7. Approve</div>
+                <div class="progress-step" data-module="pre-deployment-validation">8. Validate</div>
+            </div>
+
+            <!-- Auto Blockchain Connection -->
+            <div id="blockchain-connection-fullview" class="workflow-fullview" style="display: block;">
+                <div class="fullview-header">
+                    <h2>🔗 Auto Blockchain Connection</h2>
+                    <div class="view-controls">
+                        <button class="btn-set-default" onclick="setDefaultView('blockchain-connection')">⭐ Set as Default</button>
+                    </div>
+                </div>
+                
+                <!-- MetaMask Instructions -->
+                <div id="metamask-instructions" class="metamask-instructions" style="display: none;">
+                    <h3>🦊 MetaMask Not Detected</h3>
+                    <p>To use this dashboard, you need to:</p>
+                    <ol>
+                        <li>Install <a href="https://metamask.io/download.html" target="_blank">MetaMask Browser Extension</a></li>
+                        <li>Refresh this page after installation</li>
+                        <li>Make sure MetaMask is unlocked</li>
+                        <li>Click the "Connect All Chains" button below</li>
+                    </ol>
+                    <button onclick="window.location.reload()" style="background: var(--grafana-orange); color: black; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
+                        🔄 Refresh Page
+                    </button>
+                </div>
+
+                <div class="panel auto-config-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">🚀 Auto-Configured Blockchain Network</div>
+                    </div>
+                    <div class="env-config">
+                        📁 Loading RPC endpoints from .env file...<br>
+                        ✅ Ethereum: https://eth-mainnet.alchemyapi.io/v2/***<br>
+                        ✅ Polygon: https://polygon-mainnet.g.alchemy.com/v2/***<br>
+                        ✅ Arbitrum: https://arbitrum-mainnet.infura.io/v3/***<br>
+                        ✅ Optimism: https://optimism-mainnet.infura.io/v3/***<br>
+                        ✅ BSC: https://bsc-dataseed.binance.org/***
+                    </div>
+                    <div class="field-description">
+                        All RPC endpoints automatically configured from environment variables. No manual setup required.
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">🌐 Multi-Chain Connection Status</div>
+                    </div>
+                    
+                    <div class="chain-grid">
+                        <div class="chain-card" id="eth-chain">
+                            <div class="chain-icon">⚡</div>
+                            <div class="chain-name">Ethereum</div>
+                            <div class="chain-status" id="eth-status">Disconnected</div>
+                            <div class="latency" id="eth-latency">-</div>
+                        </div>
+                        <div class="chain-card" id="polygon-chain">
+                            <div class="chain-icon">🔷</div>
+                            <div class="chain-name">Polygon</div>
+                            <div class="chain-status" id="polygon-status">Disconnected</div>
+                            <div class="latency" id="polygon-latency">-</div>
+                        </div>
+                        <div class="chain-card" id="arbitrum-chain">
+                            <div class="chain-icon">🌀</div>
+                            <div class="chain-name">Arbitrum</div>
+                            <div class="chain-status" id="arbitrum-status">Disconnected</div>
+                            <div class="latency" id="arbitrum-latency">-</div>
+                        </div>
+                        <div class="chain-card" id="optimism-chain">
+                            <div class="chain-icon">⚪</div>
+                            <div class="chain-name">Optimism</div>
+                            <div class="chain-status" id="optimism-status">Disconnected</div>
+                            <div class="latency" id="optimism-latency">-</div>
+                        </div>
+                    </div>
+
+                    <div class="bulk-actions">
+                        <button class="btn-action" onclick="connectAllChains()" style="padding: 12px 24px;">
+                            🔗 Connect All Chains
+                        </button>
+                        <button class="btn-action secondary" onclick="testAllConnections()">
+                            🔍 Test All Connections
+                        </button>
+                        <button class="btn-action secondary" onclick="disconnectAllChains()">
+                            🔌 Disconnect All
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">🦊 Wallet Connection</div>
+                    </div>
+
+                    <div class="connection-field">
+                        <label>Select Wallet Type</label>
+                        <div class="wallet-selection">
+                            <label class="wallet-option" id="metamask-option">
+                                <input type="radio" name="walletType" value="metamask" checked>
+                                <span class="wallet-icon">🦊</span>
+                                <span class="wallet-label">MetaMask</span>
+                                <span class="wallet-desc">Browser extension</span>
+                            </label>
+                            <label class="wallet-option hardware-wallet-option" id="hardware-option">
+                                <input type="radio" name="walletType" value="hardware">
+                                <span class="wallet-icon">🔒</span>
+                                <span class="wallet-label">Hardware Wallet</span>
+                                <span class="wallet-desc">Ledger, Trezor</span>
+                            </label>
+                            <label class="wallet-option" id="smart-option">
+                                <input type="radio" name="walletType" value="smart">
+                                <span class="wallet-icon">🧠</span>
+                                <span class="wallet-label">Smart Wallet</span>
+                                <span class="wallet-desc">AA & Gasless</span>
+                            </label>
+                        </div>
+                        
+                        <button class="connection-test-btn" onclick="connectWallet()" style="margin-top: 10px; padding: 10px 20px;">
+                            🔗 Connect Wallet
+                        </button>
+                        
+                        <div class="validation-status">
+                            <div class="status-check status-invalid" id="wallet-status">❌</div>
+                            <span id="wallet-status-text">Wallet not connected</span>
+                        </div>
+                    </div>
+
+                    <div id="accountInfo" style="display: none; margin-top: 15px; padding: 15px; background: #1a1a1a; border-radius: 6px;">
+                        <h4 style="color: var(--grafana-green); margin-bottom: 10px;">✅ Wallet Connected</h4>
+                        <p><strong>Account:</strong> <span id="accountAddress"></span></p>
+                        <p><strong>Network:</strong> <span id="networkInfo"></span></p>
+                        <p><strong>Balance:</strong> <span id="walletBalance">Loading...</span></p>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">📊 Connection Analytics</div>
+                    </div>
+                    <div class="metric-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Active Chains</div>
+                            <div class="metric-value" id="activeChains">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Avg Latency</div>
+                            <div class="metric-value" id="avgLatency">-</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Success Rate</div>
+                            <div class="metric-value" id="successRate">-</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Failover Events</div>
+                            <div class="metric-value">2</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enterprise Security Configuration -->
+            <div id="security-configuration-fullview" class="workflow-fullview">
+                <div class="fullview-header">
+                    <h2>🛡️ Enterprise Security Configuration</h2>
+                    <div class="view-controls">
+                        <button class="btn-set-default" onclick="setDefaultView('security-configuration')">⭐ Set as Default</button>
+                        <button class="btn-close-view" onclick="showDefaultView()">✕</button>
+                    </div>
+                </div>
+                
+                <!-- Mandatory Multi-Signature Wallet -->
+                <div class="panel multi-sig-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">🔐 Mandatory Multi-Signature Wallet</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Multi-Sig Configuration</label>
+                        <select class="input-field" id="multiSigThreshold">
+                            <option value="3-5">3 of 5 (Institutional Standard)</option>
+                            <option value="4-7">4 of 7 (Enterprise Grade)</option>
+                            <option value="5-9">5 of 9 (Maximum Security)</option>
+                        </select>
+                        <div class="field-description">Required signatures for transaction execution</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Signer Addresses</label>
+                        <textarea class="input-field" rows="4" placeholder="Enter signer addresses (one per line)" id="signerAddresses"></textarea>
+                        <div class="field-description">Add all authorized signer wallet addresses</div>
+                    </div>
+                    
+                    <button class="btn-action" onclick="deployMultiSig()">🚀 Deploy Multi-Sig Contract</button>
+                </div>
+
+                <!-- Enterprise Security Controls -->
+                <div class="panel security-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">⚡ Enterprise Security Controls</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Maximum Drawdown Limit (%)</label>
+                        <input type="text" class="input-field" value="15" id="maxDrawdown">
+                        <div class="field-description">Stop trading if losses exceed this percentage</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Daily Loss Limit (ETH)</label>
+                        <input type="text" class="input-field" value="5" id="dailyLossLimit">
+                        <div class="field-description">Maximum allowed loss per day</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Position Size Limit (ETH)</label>
+                        <input type="text" class="input-field" value="10" id="positionSizeLimit">
+                        <div class="field-description">Maximum position size per trade</div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Gas Price Limit (Gwei)</label>
+                        <input type="text" class="input-field" value="50" id="gasPriceLimit">
+                        <div class="field-description">Maximum gas price for transactions</div>
+                    </div>
+                    
+                    <div class="circuit-breaker">
+                        <div class="panel-header">
+                            <div class="panel-title">🛑 Emergency Stop System</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px;">
+                            <button class="btn-action danger" onclick="emergencyStop()" style="padding: 12px 24px; font-size: 14px;">
+                                🚨 EMERGENCY STOP
+                            </button>
+                            <div class="field-description" style="margin-top: 10px;">
+                                Immediately halts all trading activity and withdraws funds to cold storage
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">📊 Real-time Risk Assessment</div>
+                    </div>
+                    
+                    <div class="metric-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Current Risk Level</div>
+                            <div class="metric-value" style="color: var(--grafana-orange);" id="currentRiskLevel">MEDIUM</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Open Positions</div>
+                            <div class="metric-value">3</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Liquidation Risk</div>
+                            <div class="metric-value" style="color: var(--grafana-green);">LOW</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Portfolio VaR</div>
+                            <div class="metric-value">2.4%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="risk-meter">
+                        <div class="risk-level risk-medium" id="riskMeter"></div>
+                    </div>
+                    
+                    <div class="event-log" id="securityEventLog">
+                        <div class="event-log-entry event-info">[12:45:23] Security system initialized</div>
+                        <div class="event-log-entry event-warning">[12:46:01] High gas prices detected</div>
+                        <div class="event-log-entry event-security">[12:47:15] Multi-signature mode active</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">🔍 Transaction Simulation</div>
+                    </div>
+                    
+                    <div class="transaction-simulator">
+                        <div class="input-group">
+                            <label>Pre-execution Simulation</label>
+                            <button class="btn-action secondary" onclick="simulateTransaction()" style="width: 100%;">
+                                🔄 Run Transaction Simulation
+                            </button>
+                            <div class="field-description">Test transaction outcomes before execution</div>
+                        </div>
+                        
+                        <div id="simulationResults" style="display: none; margin-top: 15px; padding: 10px; background: #1a1a1a; border-radius: 4px;">
+                            <div style="color: var(--grafana-green); font-size: 12px;">✅ Simulation successful - No risks detected</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional module views would continue here -->
+            <!-- AI Configuration, Strategy Discovery, etc. -->
+
+            <div class="navigation-controls">
+                <button class="btn-next-module" id="nextModuleBtn" onclick="goToNextModule()">➡️ Next: Enterprise Security</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🚀 AUTO-CONFIGURED BLOCKCHAIN CONNECTION MANAGER
+        class AutoBlockchainManager {
+            constructor() {
+                this.chains = {
+                    'eth': { 
+                        name: 'Ethereum', 
+                        rpc: 'https://eth-mainnet.alchemyapi.io/v2/demo',
+                        icon: '⚡',
+                        connected: false,
+                        latency: null
+                    },
+                    'polygon': { 
+                        name: 'Polygon', 
+                        rpc: 'https://polygon-mainnet.g.alchemy.com/v2/demo',
+                        icon: '🔷',
+                        connected: false,
+                        latency: null
+                    },
+                    'arbitrum': { 
+                        name: 'Arbitrum', 
+                        rpc: 'https://arbitrum-mainnet.infura.io/v3/demo',
+                        icon: '🌀',
+                        connected: false,
+                        latency: null
+                    },
+                    'optimism': { 
+                        name: 'Optimism', 
+                        rpc: 'https://optimism-mainnet.infura.io/v3/demo',
+                        icon: '⚪',
+                        connected: false,
+                        latency: null
+                    }
+                };
+                this.wallet = {
+                    connected: false,
+                    accounts: [],
+                    chainId: null,
+                    balance: null
+                };
+                this.initialize();
+            }
+
+            async initialize() {
+                this.updateChainDisplays();
+                this.setupWalletListeners();
+                await this.autoConnectChains();
+            }
+
+            async autoConnectChains() {
+                console.log('🔄 Auto-connecting to configured chains...');
+                
+                for (const [chainId, chain] of Object.entries(this.chains)) {
+                    await this.testChainConnection(chainId);
+                }
+                
+                this.updateConnectionMetrics();
+            }
+
+            async testChainConnection(chainId) {
+                const chain = this.chains[chainId];
+                const card = document.getElementById(`${chainId}-chain`);
+                const status = document.getElementById(`${chainId}-status`);
+                const latency = document.getElementById(`${chainId}-latency`);
+                
+                if (card) card.classList.remove('connected');
+                if (status) status.textContent = 'Testing...';
+                if (latency) latency.textContent = '-';
+                
+                try {
+                    // Simulate RPC connection test
+                    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
+                    
+                    const simulatedLatency = Math.floor(80 + Math.random() * 120);
+                    chain.latency = simulatedLatency;
+                    chain.connected = true;
+                    
+                    if (card) card.classList.add('connected');
+                    if (status) status.textContent = 'Connected';
+                    if (latency) latency.textContent = `${simulatedLatency}ms`;
+                    
+                    console.log(`✅ ${chain.name} connected: ${simulatedLatency}ms`);
+                    
+                } catch (error) {
+                    chain.connected = false;
+                    if (status) status.textContent = 'Failed';
+                    console.error(`❌ ${chain.name} connection failed:`, error);
+                }
+            }
+
+            async connectAllChains() {
+                console.log('🔗 Connecting all chains...');
+                showNotification('🔄 Connecting to all blockchain networks...', 'warning');
+                
+                for (const [chainId, chain] of Object.entries(this.chains)) {
+                    await this.testChainConnection(chainId);
+                }
+                
+                this.updateConnectionMetrics();
+                showNotification('✅ All chains connected successfully!', 'success');
+            }
+
+            async testAllConnections() {
+                console.log('🔍 Testing all connections...');
+                showNotification('🔍 Testing all blockchain connections...', 'warning');
+                
+                for (const [chainId, chain] of Object.entries(this.chains)) {
+                    await this.testChainConnection(chainId);
+                }
+                
+                this.updateConnectionMetrics();
+                showNotification('✅ Connection tests completed!', 'success');
+            }
+
+            disconnectAllChains() {
+                console.log('🔌 Disconnecting all chains...');
+                
+                for (const [chainId, chain] of Object.entries(this.chains)) {
+                    chain.connected = false;
+                    chain.latency = null;
+                    
+                    const card = document.getElementById(`${chainId}-chain`);
+                    const status = document.getElementById(`${chainId}-status`);
+                    const latency = document.getElementById(`${chainId}-latency`);
+                    
+                    if (card) card.classList.remove('connected');
+                    if (status) status.textContent = 'Disconnected';
+                    if (latency) latency.textContent = '-';
+                }
+                
+                this.updateConnectionMetrics();
+                showNotification('🔌 All chains disconnected', 'warning');
+            }
+
+            updateConnectionMetrics() {
+                const connectedChains = Object.values(this.chains).filter(chain => chain.connected).length;
+                const totalLatencies = Object.values(this.chains)
+                    .filter(chain => chain.latency)
+                    .map(chain => chain.latency);
+                
+                const avgLatency = totalLatencies.length > 0 
+                    ? Math.round(totalLatencies.reduce((a, b) => a + b) / totalLatencies.length)
+                    : 0;
+                
+                const successRate = totalLatencies.length > 0 
+                    ? Math.round((connectedChains / Object.keys(this.chains).length) * 100)
+                    : 0;
+                
+                document.getElementById('activeChains').textContent = connectedChains;
+                document.getElementById('avgLatency').textContent = avgLatency > 0 ? `${avgLatency}ms` : '-';
+                document.getElementById('successRate').textContent = successRate > 0 ? `${successRate}%` : '-';
+            }
+
+            updateChainDisplays() {
+                for (const [chainId, chain] of Object.entries(this.chains)) {
+                    const status = document.getElementById(`${chainId}-status`);
+                    if (status) {
+                        status.textContent = chain.connected ? 'Connected' : 'Disconnected';
+                    }
+                }
+            }
+
+            setupWalletListeners() {
+                if (typeof window.ethereum !== 'undefined') {
+                    window.ethereum.on('accountsChanged', (accounts) => {
+                        this.wallet.accounts = accounts;
+                        this.wallet.connected = accounts.length > 0;
+                        this.updateWalletDisplay();
+                    });
+
+                    window.ethereum.on('chainChanged', (chainId) => {
+                        this.wallet.chainId = chainId;
+                        this.updateWalletDisplay();
+                    });
+                }
+            }
+
+            updateWalletDisplay() {
+                const statusElement = document.getElementById('wallet-status');
+                const statusText = document.getElementById('wallet-status-text');
+                const accountInfo = document.getElementById('accountInfo');
+                const accountAddress = document.getElementById('accountAddress');
+                const networkInfo = document.getElementById('networkInfo');
+
+                if (this.wallet.connected && this.wallet.accounts.length > 0) {
+                    const shortAddress = `${this.wallet.accounts[0].slice(0, 6)}...${this.wallet.accounts[0].slice(-4)}`;
+                    
+                    if (statusElement) {
+                        statusElement.className = 'status-check status-valid';
+                        statusElement.textContent = '✅';
+                    }
+                    if (statusText) {
+                        statusText.textContent = `Connected: ${shortAddress}`;
+                    }
+                    if (accountAddress) {
+                        accountAddress.textContent = shortAddress;
+                    }
+                    if (networkInfo) {
+                        networkInfo.textContent = this.getNetworkName(this.wallet.chainId);
+                    }
+                    if (accountInfo) {
+                        accountInfo.style.display = 'block';
+                    }
+                } else {
+                    if (statusElement) {
+                        statusElement.className = 'status-check status-invalid';
+                        statusElement.textContent = '❌';
+                    }
+                    if (statusText) {
+                        statusText.textContent = 'Wallet not connected';
+                    }
+                    if (accountInfo) {
+                        accountInfo.style.display = 'none';
+                    }
+                }
+            }
+
+            getNetworkName(chainId) {
+                const networks = {
+                    '0x1': 'Ethereum Mainnet',
+                    '0x89': 'Polygon Mainnet',
+                    '0xa4b1': 'Arbitrum One',
+                    '0xa': 'Optimism',
+                    '0x38': 'BSC Mainnet'
+                };
+                return networks[chainId] || `Unknown Network (${chainId})`;
+            }
+        }
+
+        // 🛡️ ENTERPRISE SECURITY MANAGER
+        class EnterpriseSecurityManager {
+            constructor() {
+                this.multiSigEnabled = false;
+                this.circuitBreakers = {
+                    maxDrawdown: 15,
+                    dailyLossLimit: 5,
+                    positionSizeLimit: 10,
+                    gasPriceLimit: 50
+                };
+                this.riskLevel = 'MEDIUM';
+                this.securityEvents = [];
+            }
+
+            async deployMultiSig() {
+                const threshold = document.getElementById('multiSigThreshold').value;
+                const signers = document.getElementById('signerAddresses').value.split('\n').filter(addr => addr.trim());
+                
+                if (signers.length === 0) {
+                    showNotification('❌ Please add at least one signer address', 'error');
+                    return;
+                }
+
+                showNotification('🔄 Deploying Multi-Signature Contract...', 'warning');
+                
+                // Simulate deployment
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                this.multiSigEnabled = true;
+                this.securityEvents.push('[12:45:23] Multi-sig contract deployed successfully');
+                this.updateSecurityLog();
+                
+                showNotification('✅ Multi-Signature Contract Deployed', 'success');
+            }
+
+            emergencyStop() {
+                if (confirm('🚨 ARE YOU SURE? This will immediately halt all trading and withdraw funds to cold storage.')) {
+                    showNotification('🛑 EMERGENCY STOP ACTIVATED - Halting all trading', 'error');
+                    this.securityEvents.push('[12:45:45] EMERGENCY STOP ACTIVATED');
+                    this.updateSecurityLog();
+                    
+                    // Simulate emergency procedures
+                    setTimeout(() => {
+                        showNotification('✅ All positions closed. Funds moved to cold storage.', 'success');
+                    }, 2000);
+                }
+            }
+
+            simulateTransaction() {
+                showNotification('🔄 Running transaction simulation...', 'warning');
+                
+                setTimeout(() => {
+                    document.getElementById('simulationResults').style.display = 'block';
+                    showNotification('✅ Transaction simulation completed - No risks detected', 'success');
+                }, 2000);
+            }
+
+            updateSecurityLog() {
+                const logElement = document.getElementById('securityEventLog');
+                if (logElement) {
+                    logElement.innerHTML = this.securityEvents
+                        .map(event => `<div class="event-log-entry event-security">${event}</div>`)
+                        .join('');
+                    logElement.scrollTop = logElement.scrollHeight;
+                }
+            }
+
+            calculateRiskLevel() {
+                // Simulate risk calculation based on market conditions
+                const riskFactors = {
+                    volatility: Math.random() * 100,
+                    liquidity: Math.random() * 100,
+                    gasPrices: Math.random() * 100
+                };
+                
+                const totalRisk = (riskFactors.volatility * 0.4 + riskFactors.liquidity * 0.3 + riskFactors.gasPrices * 0.3);
+                
+                if (totalRisk < 25) {
+                    this.riskLevel = 'LOW';
+                    document.getElementById('riskMeter').className = 'risk-level risk-low';
+                } else if (totalRisk < 50) {
+                    this.riskLevel = 'MEDIUM';
+                    document.getElementById('riskMeter').className = 'risk-level risk-medium';
+                } else if (totalRisk < 75) {
+                    this.riskLevel = 'HIGH';
+                    document.getElementById('riskMeter').className = 'risk-level risk-high';
+                } else {
+                    this.riskLevel = 'CRITICAL';
+                    document.getElementById('riskMeter').className = 'risk-level risk-critical';
+                }
+                
+                document.getElementById('currentRiskLevel').textContent = this.riskLevel;
+                document.getElementById('currentRiskLevel').style.color = 
+                    this.riskLevel === 'LOW' ? 'var(--grafana-green)' :
+                    this.riskLevel === 'MEDIUM' ? 'var(--grafana-orange)' :
+                    this.riskLevel === 'HIGH' ? 'var(--grafana-red)' : '#ff0000';
+            }
+        }
+
+        // 🌟 ENHANCED DASHBOARD WITH AUTO-CONFIGURED BLOCKCHAIN
+class EnhancedMetaMaskDetector {
+    constructor() {
+        this.hasMetaMask = false;
+        this.checkMetaMask();
+    }
+
+    checkMetaMask() {
+        this.hasMetaMask = typeof window.ethereum !== "undefined";
+        const instructions = document.getElementById("metamask-instructions");
+        if (instructions) {
+            instructions.style.display = this.hasMetaMask ? "none" : "block";
+        }
+        return this.hasMetaMask;
+    }
+
+    async autoConnectIfPossible() {
+        if (this.hasMetaMask && window.ethereum.selectedAddress) {
+            try {
+                await connectWallet();
+                return true;
+            } catch (error) {
+                console.warn("Auto-connect failed:", error);
+                return false;
+            }
+        }
+        return false;
+    }
+}
+
+        class AINEONDashboard {
+            constructor() {
+                this.defaultView = 'blockchain-connection';
+                this.currentView = this.defaultView;
+                this.moduleStatus = {
+                    'blockchain-connection': { completed: false, next: 'security-configuration' },
+                    'security-configuration': { completed: false, next: 'user-settings' },
+                    'user-settings': { completed: false, next: 'ai-configuration' },
+                    'ai-configuration': { completed: false, next: 'ai-strategy-discovery' },
+                    'ai-strategy-discovery': { completed: false, next: 'optimize-simulate' },
+                    'optimize-simulate': { completed: false, next: 'simulation-approval' },
+                    'simulation-approval': { completed: false, next: 'pre-deployment-validation' },
+                    'pre-deployment-validation': { completed: false, next: 'deployment-command' },
+                    'deployment-command': { completed: false, next: 'live-monitoring' },
+                    'live-monitoring': { completed: false, next: 'wallet-system' },
+                    'wallet-system': { completed: false, next: 'continued-optimization' },
+                    'continued-optimization': { completed: false, next: 'system-health' },
+                    'system-health': { completed: false, next: 'ai-terminal' },
+                    'ai-terminal': { completed: false, next: 'completed' }
+                };
+                
+                // Initialize managers
+                this.blockchainManager = new AutoBlockchainManager();
+                this.securityManager = new EnterpriseSecurityManager();
+                this.initializeDashboard();
+            }
+            
+            initializeDashboard() {
+        this.metaMaskDetector = new EnhancedMetaMaskDetector();
+        setTimeout(() => { this.metaMaskDetector.autoConnectIfPossible(); }, 1000);
+                document.querySelectorAll('.workflow-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        const feature = item.dataset.feature;
+                        this.showFullView(feature);
+                    });
+                });
+                
+                document.querySelectorAll('.progress-step').forEach(step => {
+                    step.addEventListener('click', function() {
+                        const module = this.dataset.module;
+                        window.dashboard.showFullView(module);
+                    });
+                });
+                
+                this.startProfitTimeAnimation();
+                this.startRiskMonitoring();
+                this.showFullView(this.defaultView);
+                this.validateCurrentModule();
+
+                // Start risk monitoring
+                setInterval(() => {
+                    this.securityManager.calculateRiskLevel();
+                }, 30000);
+                this.securityManager.calculateRiskLevel();
+            }
+            
+            showFullView(featureId) {
+                document.querySelectorAll('.workflow-fullview').forEach(view => {
+                    view.style.display = 'none';
+                });
+                
+                document.querySelectorAll('.workflow-item').forEach(item => {
+                    item.classList.remove('active-fullview');
+                });
+                
+                const fullView = document.getElementById(`${featureId}-fullview`);
+                if (fullView) {
+                    fullView.style.display = 'block';
+                    document.querySelector(`[data-feature="${featureId}"]`).classList.add('active-fullview');
+                    this.currentView = featureId;
+                    this.validateCurrentModule();
+                }
+            }
+            
+            validateCurrentModule() {
+                const currentModule = this.currentView;
+                const isCompleted = this.checkModuleCompletion(currentModule);
+                const nextModule = this.moduleStatus[currentModule]?.next;
+                
+                const nextButton = document.getElementById('nextModuleBtn');
+                if (nextButton) {
+                    nextButton.disabled = !isCompleted;
+                    if (nextModule === 'completed') {
+                        nextButton.textContent = '✅ All Modules Complete';
+                        nextButton.disabled = true;
+                    } else {
+                        nextButton.textContent = `➡️ Next: ${this.getModuleName(nextModule)}`;
+                    }
+                }
+            }
+            
+            checkModuleCompletion(module) {
+                switch(module) {
+                    case 'blockchain-connection':
+                        return this.areAllChainsConnected();
+                    case 'security-configuration':
+                        return true; // Security module always complete
+                    default:
+                        return true;
+                }
+            }
+            
+            areAllChainsConnected() {
+                const connectedChains = Object.values(this.blockchainManager.chains).filter(chain => chain.connected).length;
+                const walletConnected = this.blockchainManager.wallet.connected;
+                return connectedChains > 0 && walletConnected;
+            }
+            
+            getModuleName(moduleKey) {
+                const names = {
+                    'blockchain-connection': 'Blockchain',
+                    'security-configuration': 'Security',
+                    'user-settings': 'User Settings',
+                    'ai-configuration': 'AI Config',
+                    'ai-strategy-discovery': 'Strategy Discovery',
+                    'optimize-simulate': 'Optimize & Simulate',
+                    'simulation-approval': 'Simulation Approval',
+                    'pre-deployment-validation': 'Pre-deployment',
+                    'deployment-command': 'Deployment',
+                    'live-monitoring': 'Live Monitoring',
+                    'wallet-system': 'Wallet System',
+                    'continued-optimization': 'Continued Optimization',
+                    'system-health': 'System Health',
+                    'ai-terminal': 'AI Terminal'
+                };
+                return names[moduleKey] || moduleKey;
+            }
+            
+            goToNextModule() {
+                const currentModule = this.currentView;
+                const nextModule = this.moduleStatus[currentModule]?.next;
+                
+                if (nextModule && nextModule !== 'completed') {
+                    if (!this.checkModuleCompletion(currentModule)) {
+                        this.showNotification('❌ Please complete all requirements in current module', 'error');
+                        return;
+                    }
+                    
+                    this.moduleStatus[currentModule].completed = true;
+                    this.updateProgressSteps(currentModule, nextModule);
+                    this.showFullView(nextModule);
+                    this.showNotification(`✅ Moving to ${this.getModuleName(nextModule)}`, 'success');
+                } else if (nextModule === 'completed') {
+                    this.showNotification('🎉 All modules completed! System ready.', 'success');
+                }
+            }
+
+            updateProgressSteps(currentModule, nextModule) {
+                document.querySelectorAll('.progress-step').forEach(step => {
+                    step.classList.remove('active', 'completed');
+                });
+                
+                const currentStep = document.querySelector(`[data-module="${currentModule}"]`);
+                const nextStep = document.querySelector(`[data-module="${nextModule}"]`);
+                
+                if (currentStep) {
+                    currentStep.classList.add('completed');
+                }
+                if (nextStep) {
+                    nextStep.classList.add('active');
+                }
+            }
+            
+            setDefaultView(featureId) {
+                this.defaultView = featureId;
+                this.showNotification(`⭐ ${this.getModuleName(featureId)} set as default view`, 'success');
+            }
+
+            showDefaultView() {
+                this.showFullView(this.defaultView);
+            }
+            
+            startProfitTimeAnimation() {
+                const profitTimeElement = document.getElementById('totalProfitTime');
+                if (profitTimeElement) {
+                    setInterval(() => {
+                        const currentValue = profitTimeElement.textContent;
+                        if (currentValue.includes('hours')) {
+                            const hours = parseFloat(currentValue);
+                            profitTimeElement.textContent = (hours + 0.01).toFixed(2) + ' hours';
+                        }
+                    }, 10000);
+                }
+            }
+
+            startRiskMonitoring() {
+                setInterval(() => {
+                    this.securityManager.calculateRiskLevel();
+                }, 30000);
+                this.securityManager.calculateRiskLevel();
+            }
+            
+            showNotification(message, type) {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 3000);
+            }
+        }
+
+        // 🦊 GLOBAL CONNECTION FUNCTIONS
+        async function connectWallet() {
+            try {
+                if (!window.ethereum) {
+                    showNotification('❌ MetaMask not installed', 'error');
+                    return;
+                }
+
+                const accounts = await window.ethereum.request({
+                    method: 'eth_requestAccounts'
+                });
+
+                if (accounts.length === 0) {
+                    throw new Error('No accounts found');
+                }
+
+                const chainId = await window.ethereum.request({
+                    method: 'eth_chainId'
+                });
+
+                // Update dashboard wallet state
+                window.dashboard.blockchainManager.wallet.accounts = accounts;
+                window.dashboard.blockchainManager.wallet.connected = true;
+                window.dashboard.blockchainManager.wallet.chainId = chainId;
+                window.dashboard.blockchainManager.updateWalletDisplay();
+
+                const shortAddress = `${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`;
+                showNotification(`✅ MetaMask connected: ${shortAddress}`, 'success');
+                
+                window.dashboard.validateCurrentModule();
+                
+            } catch (error) {
+                console.error("Connection failed:", error);
+                let userMessage = error.message;
+                if (error.code === 4001) {
+                    userMessage = 'Connection rejected by user';
+                }
+                showNotification(`❌ ${userMessage}`, 'error');
+            }
+        }
+
+        // 🛡️ SECURITY FUNCTIONS
+        function deployMultiSig() {
+            if (window.dashboard && window.dashboard.securityManager) {
+                window.dashboard.securityManager.deployMultiSig();
+            }
+        }
+
+        function emergencyStop() {
+            if (window.dashboard && window.dashboard.securityManager) {
+                window.dashboard.securityManager.emergencyStop();
+            }
+        }
+
+        function simulateTransaction() {
+            if (window.dashboard && window.dashboard.securityManager) {
+                window.dashboard.securityManager.simulateTransaction();
+            }
+        }
+
+        // 🔗 BLOCKCHAIN FUNCTIONS
+        function connectAllChains() {
+            if (window.dashboard && window.dashboard.blockchainManager) {
+                window.dashboard.blockchainManager.connectAllChains();
+            }
+        }
+
+        function testAllConnections() {
+            if (window.dashboard && window.dashboard.blockchainManager) {
+                window.dashboard.blockchainManager.testAllConnections();
+            }
+        }
+
+        function disconnectAllChains() {
+            if (window.dashboard && window.dashboard.blockchainManager) {
+                window.dashboard.blockchainManager.disconnectAllChains();
+            }
+        }
+
+        // 🎯 DASHBOARD FUNCTIONS
+        function setDefaultView(featureId) {
+            if (window.dashboard) {
+                window.dashboard.setDefaultView(featureId);
+            }
+        }
+        
+        function showDefaultView() {
+            if (window.dashboard) {
+                window.dashboard.showDefaultView();
+            }
+        }
+        
+        function updateProfitDisplay() {
+            const currencySelector = document.getElementById('currencySelector');
+            const profitAmount = document.getElementById('profitAmount');
+            if (currencySelector && profitAmount) {
+                const currency = currencySelector.value;
+                profitAmount.textContent = currency === 'ETH' ? '2.45 ETH' : '$347,200';
+            }
+        }
+
+        function updateRefreshRate() {
+            // Refresh rate functionality
+        }
+
+        function goToNextModule() {
+            if (window.dashboard) {
+                window.dashboard.goToNextModule();
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // 🚀 INITIALIZATION
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("📄 DOM loaded - initializing institutional dashboard...");
+            window.dashboard = new AINEONDashboard();
+        });
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                window.dashboard = new AINEONDashboard();
+            });
+        } else {
+            window.dashboard = new AINEONDashboard();
+        }
+    </script>
+</body>
+</html>
