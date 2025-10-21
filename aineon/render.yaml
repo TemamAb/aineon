@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: arbitrage-bot
+    name: aineon-dashboard
     env: node
     plan: free
     buildCommand: npm install && npm run build
@@ -8,9 +8,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: RPC_URL
-        fromSecret: true
-      - key: PRIVATE_KEY
-        fromSecret: true
-      - key: FLASH_LOAN_PROVIDER
-        value: aave-v3
+      - key: VITE_APP_TITLE
+        value: "Aineon Arbitrage Dashboard"
+    healthCheckPath: /health
+    autoDeploy: true
