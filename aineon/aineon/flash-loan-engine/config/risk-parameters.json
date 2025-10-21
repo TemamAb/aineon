@@ -1,0 +1,85 @@
+{
+  "globalLimits": {
+    "maxTotalExposure": "100000000000000000000000000",
+    "maxSingleAssetExposure": "0.10",
+    "maxSingleProtocolExposure": "0.25",
+    "dailyVolumeLimit": "500000000000000000000000000",
+    "minProfitThreshold": "100000000000000000"
+  },
+  "assetRiskScores": {
+    "WETH": {
+      "volatilityScore": 0.7,
+      "liquidityScore": 0.9,
+      "correlationScore": 0.8,
+      "overallRisk": 0.75
+    },
+    "USDC": {
+      "volatilityScore": 0.1,
+      "liquidityScore": 0.95,
+      "correlationScore": 0.9,
+      "overallRisk": 0.2
+    },
+    "USDT": {
+      "volatilityScore": 0.2,
+      "liquidityScore": 0.9,
+      "correlationScore": 0.85,
+      "overallRisk": 0.3
+    },
+    "DAI": {
+      "volatilityScore": 0.15,
+      "liquidityScore": 0.85,
+      "correlationScore": 0.8,
+      "overallRisk": 0.25
+    }
+  },
+  "protocolRiskScores": {
+    "aave": {
+      "securityScore": 0.95,
+      "reliabilityScore": 0.98,
+      "liquidityScore": 0.92,
+      "overallRisk": 0.05
+    },
+    "dydx": {
+      "securityScore": 0.90,
+      "reliabilityScore": 0.99,
+      "liquidityScore": 0.88,
+      "overallRisk": 0.08
+    },
+    "uniswap": {
+      "securityScore": 0.88,
+      "reliabilityScore": 0.97,
+      "liquidityScore": 0.85,
+      "overallRisk": 0.12
+    }
+  },
+  "executionParameters": {
+    "maxSlippageTolerance": "0.005",
+    "maxGasPriceGwei": 100,
+    "minProfitabilityThreshold": "0.003",
+    "maxExecutionTimeMs": 120000,
+    "timeoutBufferMs": 30000
+  },
+  "riskTiers": {
+    "conservative": {
+      "maxSingleTradeSize": "0.05",
+      "minProfitMargin": "0.005",
+      "maxDrawdown": "0.02"
+    },
+    "balanced": {
+      "maxSingleTradeSize": "0.10",
+      "minProfitMargin": "0.003",
+      "maxDrawdown": "0.05"
+    },
+    "aggressive": {
+      "maxSingleTradeSize": "0.15",
+      "minProfitMargin": "0.002",
+      "maxDrawdown": "0.08"
+    }
+  },
+  "monitoringThresholds": {
+    "healthCheckInterval": 30000,
+    "performanceAlertThreshold": -0.02,
+    "liquidityAlertThreshold": 0.5,
+    "failureRateAlert": 0.1
+  }
+}
