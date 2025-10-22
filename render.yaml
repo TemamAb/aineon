@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: aineon-dashboard
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_APP_TITLE
+        value: "Aineon Arbitrage Dashboard"
+    healthCheckPath: /health
+    autoDeploy: true
