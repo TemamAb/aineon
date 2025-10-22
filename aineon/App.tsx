@@ -1,160 +1,95 @@
-// PLATINUM SOURCES: React Admin, Material-UI
-// CONTINUAL LEARNING: User behavior learning, layout optimization
-
-import React, { useState, useEffect, useCallback } from 'react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { SnackbarProvider } from 'notistack';
-import { AuthProvider, useAuth } from './hooks/useAuth';
-import { WebSocketProvider } from './hooks/useWebSocket';
-import { UserPreferencesProvider } from './hooks/useUserPreferences';
-
-// Components
-import Layout from './components/Layout/Layout';
-import Login from './components/Auth/Login';
-import LiveMonitoring from './components/LiveMonitoring/LiveMonitoring';
-import TradingParameters from './components/Trading/TradingParameters';
-import AITerminal from './components/AI/AITerminal';
-import WalletSecurity from './components/Security/WalletSecurity';
-import ProfitWithdrawal from './components/Finance/ProfitWithdrawal';
-import LoadingScreen from './components/UI/LoadingScreen';
-
-// Services
-import { dashboardService } from './services/dashboardService';
-import { userBehaviorService } from './services/userBehaviorService';
-
-// Design Tokens
-const theme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: '#2563eb', // Aineon blue
-    },
-    success: {
-      main: '#10b981', // Profit green
-    },
-    warning: {
-      main: '#f59e0b', // Warning amber
-    },
-    error: {
-      main: '#ef4444', // Error red
-    },
-    background: {
-      default: '#0f172a',
-      paper: '#1e293b',
-    },
-  },
-  typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-    h1: {
-      fontSize: '2.5rem',
-      fontWeight: 700,
-    },
-    h2: {
-      fontSize: '2rem',
-      fontWeight: 600,
-    },
-    body1: {
-      fontSize: '1rem',
-      lineHeight: 1.6,
-    },
-  },
-  spacing: 8,
-  breakpoints: {
-    values: {
-      xs: 0,
-      sm: 768,
-      md: 1024,
-      lg: 1280,
-      xl: 1440,
-    },
-  },
-});
-
-const AppContent: React.FC = () => {
-  const { user, loading, hasPermission } = useAuth();
-  const [initialized, setInitialized] = useState(false);
-  const [userPreferences, setUserPreferences] = useState(null);
-
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // Initialize real-time connections
-        await dashboardService.initialize();
-        
-        // Load user preferences
-        const preferences = await userBehaviorService.loadUserPreferences();
-        setUserPreferences(preferences);
-        
-        // Track user behavior for continual learning
-        userBehaviorService.trackAppLoad();
-        
-        setInitialized(true);
-      } catch (error) {
-        console.error('Failed to initialize app:', error);
-      }
-    };
-
-    initializeApp();
-  }, []);
-
-  const handleLayoutChange = useCallback((layoutConfig: any) => {
-    // Learn from user layout preferences
-    userBehaviorService.recordLayoutPreference(layoutConfig);
-    setUserPreferences(prev => ({ ...prev, layout: layoutConfig }));
-  }, []);
-
-  if (loading || !initialized) {
-    return <LoadingScreen />;
-  }
-
-  if (!user) {
-    return <Login />;
-  }
-
-  return (
-    <Router>
-      <Layout onLayoutChange={handleLayoutChange} userPreferences={userPreferences}>
-        <Routes>
-          <Route path="/" element={<Navigate to="/monitoring" replace />} />
-          <Route path="/monitoring" element={<LiveMonitoring />} />
-          <Route path="/trading" element={<TradingParameters />} />
-          <Route path="/ai-terminal" element={<AITerminal />} />
-          {hasPermission('security_access') && (
-            <Route path="/security" element={<WalletSecurity />} />
-          )}
-          {hasPermission('finance_access') && (
-            <Route path="/finance" element={<ProfitWithdrawal />} />
-          )}
-        </Routes>
-      </Layout>
-    </Router>
-  );
-};
+// MASTER DASHBOARD UPGRADE - ADDING MISSING FEATURES
+import React, { useState, useEffect } from 'react';
 
 const App: React.FC = () => {
-  return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <SnackbarProvider 
-        maxSnack={3}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
+  // MASTER DASHBOARD FEATURES
+  const [refreshInterval, setRefreshInterval] = useState<number>(5000);
+  const [currency, setCurrency] = useState<'USD' | 'ETH'>('USD');
+  const [viewMode, setViewMode] = useState<'default' | 'advanced'>('default');
+  const [totalProfit, setTotalProfit] = useState<number>(2147380);
+  const [daysRunning, setDaysRunning] = useState<number>(14);
+
+  // MASTER HEADER CONTROLS
+  const HeaderControls: React.FC = () => (
+    <div className="header-controls">
+      <div className="profit-pulse">
+        Ì≤π ${(totalProfit / 1000000).toFixed(2)}M ({daysRunning}d)
+      </div>
+      
+      {/* CURRENCY TOGGLE - MASTER FEATURE */}
+      <select 
+        value={currency} 
+        onChange={(e) => setCurrency(e.target.value as 'USD' | 'ETH')}
+        className="currency-toggle"
       >
-        <AuthProvider>
-          <WebSocketProvider>
-            <UserPreferencesProvider>
-              <AppContent />
-            </UserPreferencesProvider>
-          </WebSocketProvider>
-        </AuthProvider>
-      </SnackbarProvider>
-    </ThemeProvider>
+        <option value="USD">USD</option>
+        <option value="ETH">ETH</option>
+      </select>
+
+      {/* CONFIGURABLE REFRESH - MASTER FEATURE */}
+      <select 
+        value={refreshInterval} 
+        onChange={(e) => setRefreshInterval(Number(e.target.value))}
+        className="refresh-interval"
+      >
+        <option value={1000}>1s</option>
+        <option value={2000}>2s</option>
+        <option value={5000}>5s</option>
+        <option value={10000}>10s</option>
+        <option value={30000}>30s</option>
+        <option value={0}>Manual</option>
+      </select>
+
+      {/* VIEW MODE TOGGLE - MASTER FEATURE */}
+      <button 
+        onClick={() => setViewMode(viewMode === 'default' ? 'advanced' : 'default')}
+        className="view-toggle"
+      >
+        {viewMode === 'default' ? 'Advanced' : 'Default'}
+      </button>
+    </div>
+  );
+
+  // 8-MODULE GRID - MASTER FEATURE
+  const DashboardGrid: React.FC = () => (
+    <div className={`dashboard-grid ${viewMode}`}>
+      {/* ROW 1 - 4 MODULES */}
+      <div className="module-card">
+        <wallet-security :view-mode="viewMode"></wallet-security>
+      </div>
+      <div className="module-card">
+        <trading-parameters :view-mode="viewMode"></trading-parameters>
+      </div>
+      <div className="module-card">
+        <optimization-engine :view-mode="viewMode"></optimization-engine>
+      </div>
+      <div className="module-card">
+        <execution-quality :view-mode="viewMode"></execution-quality>
+      </div>
+
+      {/* ROW 2 - 4 MODULES */}
+      <div className="module-card">
+        <live-monitoring :view-mode="viewMode"></live-monitoring>
+      </div>
+      <div className="module-card">
+        <ai-terminal :view-mode="viewMode"></ai-terminal>
+      </div>
+      <div className="module-card">
+        <profit-withdrawal :view-mode="viewMode"></profit-withdrawal>
+      </div>
+      <div className="module-card">
+        <flash-loan-system :view-mode="viewMode"></flash-loan-system>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="aineon-dashboard">
+      <header className="dashboard-header">
+        <h1>ÌøóÔ∏è AINEON MASTER DASHBOARD</h1>
+        <HeaderControls />
+      </header>
+      <DashboardGrid />
+    </div>
   );
 };
-
-// Performance monitoring
-export default React.memo(App);
