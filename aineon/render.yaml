@@ -1,7 +1,9 @@
 services:
   - type: web
-    name: aineon-production-dashboard
-    rootDir: aineon-production-dashboard
-    buildCommand: npm run build
-    staticPublishPath: dist
-    env: static
+    name: aineon-profit-engine
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
