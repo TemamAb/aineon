@@ -3,6 +3,7 @@
   "version": "4.0.0",
   "description": "AINEON Profit Engine - $100M Flash Loan Arbitrage with Self-Optimizing AI",
   "main": "backend/server.js",
+  "type": "module",
   "scripts": {
     "start": "node backend/server.js",
     "build": "npm install && npx hardhat compile",
@@ -12,8 +13,7 @@
     "test": "npx hardhat test"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "ethers": "^5.7.2"
+    "express": "^4.18.2"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-waffle": "^2.0.6",
