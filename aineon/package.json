@@ -3,7 +3,7 @@
   "version": "4.0.0",
   "description": "AINEON Profit Engine - $100M Flash Loan Arbitrage with Self-Optimizing AI",
   "main": "backend/server.js",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "start": "node backend/server.js",
     "build": "npm install && npx hardhat compile",
