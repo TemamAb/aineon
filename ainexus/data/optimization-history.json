@@ -1,0 +1,77 @@
+[
+  {
+    "timestamp": "2025-10-31T09:24:29.206Z",
+    "performance": {
+      "winRate": 0.75,
+      "avgProfit": 2486.6666666666665,
+      "riskAdjustedReturn": 4.945497089357352,
+      "capitalEfficiency": 0.746,
+      "marketConditions": {
+        "volatility": 0.65,
+        "liquidity": 0.82,
+        "competition": 0.45,
+        "opportunityDensity": 0.73
+      },
+      "executionSpeed": 466.62590252627757,
+      "successRate": 0.75
+    },
+    "optimizations": [
+      {
+        "parameter": "preferredDexes",
+        "oldValue": [
+          "uniswap",
+          "sushiswap"
+        ],
+        "newValue": [
+          "uniswap_v3",
+          "pancakeswap_v3",
+          "sushiswap"
+        ],
+        "reason": "AI detected higher liquidity in V3 pools",
+        "impact": "HIGH"
+      },
+      {
+        "parameter": "arbitragePairs",
+        "oldValue": [
+          "ETH/USDC",
+          "MATIC/USDT"
+        ],
+        "newValue": [
+          "ETH/USDC",
+          "AVAX/USDC",
+          "MATIC/USDT",
+          "BNB/USDT"
+        ],
+        "reason": "AI identified new high-opportunity pairs",
+        "impact": "MEDIUM"
+      }
+    ],
+    "mlResults": {
+      "marketPatterns": {
+        "volatilityTrend": "increasing",
+        "liquidityPattern": "consolidating",
+        "arbitrageWindow": "expanding",
+        "mevActivity": "moderate"
+      },
+      "optimalStrategies": {
+        "bestStrategy": "multi_dex_triangular",
+        "optimalGasPrice": "fast",
+        "riskLevel": "medium",
+        "capitalAllocation": "aggressive"
+      },
+      "profitPredictions": {
+        "nextHour": 2850,
+        "next24h": 68400,
+        "confidence": 0.82,
+        "recommendedPairs": [
+          "ETH/USDC",
+          "AVAX/USDT",
+          "MATIC/USDC"
+        ]
+      },
+      "modelAccuracy": 0.87,
+      "learningEpoch": 1
+    },
+    "improvement": 13.9129
+  }
+]
