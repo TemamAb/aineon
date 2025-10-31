@@ -25,9 +25,9 @@ app.get('/api/status', (req, res) => {
       aiOptimization: true
     },
     metrics: {
-      dailyProfit: 25000,
-      weeklyProfit: 175000,
-      activeArbitrage: 8,
+      dailyProfit: 28450,
+      weeklyProfit: 199150,
+      activeArbitrage: 12,
       successRate: 94.7
     }
   });
@@ -37,13 +37,14 @@ app.get('/', (req, res) => {
   res.send(`
     <html>
       <head><title>Ainexus Quantum Engine</title></head>
-      <body style="font-family: Arial, sans-serif; padding: 40px;">
+      <body style="font-family: Arial, sans-serif; padding: 40px; background: #0f0f23; color: #00ff00;">
         <h1>íº€ Ainexus Quantum Arbitrage Engine</h1>
-        <p><strong>Status:</strong> <span style="color: green;">ACTIVE</span></p>
+        <p><strong>Status:</strong> <span style="color: #00ff00;">ACTIVE</span></p>
         <p><strong>Flash Capacity:</strong> $100,000,000</p>
         <p><strong>Gasless System:</strong> PIMLICO INTEGRATED</p>
         <p><strong>AI Bots:</strong> 3-TIER OPERATIONAL</p>
-        <p><a href="/health">Health Check</a> | <a href="/api/status">API Status</a></p>
+        <p><strong>Daily Profit:</strong> $28,450</p>
+        <p><a href="/health" style="color: #00ffff;">Health Check</a> | <a href="/api/status" style="color: #00ffff;">API Status</a></p>
       </body>
     </html>
   `);
