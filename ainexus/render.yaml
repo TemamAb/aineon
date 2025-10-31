@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: quantum-engine
+    env: docker
+    docker:
+      dockerfile: Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+    port: 10000
+    healthCheckPath: /health
+  - type: web
+    name: quantum-dashboard
+    env: docker
+    docker:
+      dockerfile: Dockerfile
+    command: npm run dashboard
+    envVars:
+      - key: NODE_ENV
+        value: production
+    port: 3000
