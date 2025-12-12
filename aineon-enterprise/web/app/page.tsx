@@ -405,10 +405,7 @@ export default function Home() {
                                 ) : (
                                     <button
                                         onClick={goLive}
-                                        className={`w-full p-3 rounded flex items-center justify-between text-xs font-bold border transition-all ${systemMode === 'LIVE'
-                                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                                            : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                                            }`}
+                                        className="w-full p-3 rounded flex items-center justify-between text-xs font-bold border transition-all bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"
                                     >
                                         <span className="flex items-center gap-2">
                                             <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
@@ -429,8 +426,8 @@ export default function Home() {
 
                         <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700 mb-4">
                             <div className="text-xs text-slate-500 mb-1">PENDING BALANCE</div>
-                            <div className="text-2xl font-mono text-white flex items-center gap-2">
-                                {profit?.accumulated_eth?.toFixed(4) || "0.0000"} <span className="text-xs text-slate-500">ETH</span>
+                            <div className="text-3xl font-black font-mono text-emerald-400 flex items-center gap-2 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]">
+                                +{profit?.accumulated_eth?.toFixed(4) || "0.0000"} <span className="text-sm font-bold text-emerald-600">ETH</span>
                             </div>
                         </div>
 
@@ -471,8 +468,8 @@ export default function Home() {
                                 }}
                                 disabled={!profit || profit.accumulated_eth <= 0}
                                 className={`w-full py-3 rounded text-xs font-bold border flex items-center justify-center gap-2 transition-all ${profit && profit.accumulated_eth > 0
-                                        ? 'bg-blue-600 hover:bg-blue-500 text-white border-blue-500'
-                                        : 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed'
+                                    ? 'bg-blue-600 hover:bg-blue-500 text-white border-blue-500'
+                                    : 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed'
                                     }`}
                             >
                                 <ArrowRight size={14} /> WITHDRAW NOW
