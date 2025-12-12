@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "build": "echo 'Build complete'",
+    "build": "echo 'Docker handles build'",
     "dev": "node src/index.js"
   },
   "dependencies": {
