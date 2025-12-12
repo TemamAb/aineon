@@ -4,6 +4,8 @@ import { Activity, Zap, Cpu, Terminal, RefreshCw, Server, ShieldCheck, Settings,
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Types for our API data
+type SystemMode = 'IDLE' | 'PREFLIGHT' | 'SIMULATION' | 'LIVE';
+
 interface EngineStatus {
     status: string;
     chain_id: number;
@@ -28,6 +30,11 @@ interface Opportunity {
 }
 
 export default function Home() {
+    // Mode State
+    const [systemMode, setSystemMode] = useState<SystemMode>('IDLE');
+    const [preflightProgress, setPreflightProgress] = useState(0);
+    const [canStartSim, setCanStartSim] = useState(false);
+
     const [status, setStatus] = useState<EngineStatus | null>(null);
     const [profit, setProfit] = useState<ProfitStats | null>(null);
     const [opps, setOpps] = useState<Opportunity[]>([]);
@@ -38,6 +45,36 @@ export default function Home() {
     // Config State
     const [transferEnabled, setTransferEnabled] = useState(false);
     const [threshold, setThreshold] = useState("0.01");
+
+    // Mode Transitions
+    const startPreflight = () => {
+        setSystemMode('PREFLIGHT');
+        setPreflightProgress(0);
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 10;
+            setPreflightProgress(progress);
+            if (progress >= 100) {
+                clearInterval(interval);
+                setCanStartSim(true);
+            }
+        }, 300); // 3 seconds total
+    };
+
+    const startSimulation = () => {
+        setSystemMode('SIMULATION');
+    };
+
+    const goLive = () => {
+        setSystemMode('LIVE');
+    };
+
+    const abortLive = () => {
+        setSystemMode('IDLE');
+        setPreflightProgress(0);
+        setCanStartSim(false);
+        setOpps([]);
+    };
 
     const fetchData = async () => {
         try {
@@ -273,26 +310,114 @@ export default function Home() {
                     <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                         <Cpu size={20} className="text-purple-500" /> SYSTEM STATUS
                     </h2>
-                    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 h-64 flex flex-col items-center justify-center text-center backdrop-blur-sm relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 group-hover:opacity-100 transition-opacity opacity-50"></div>
-                        <RefreshCw className={`w-12 h-12 text-slate-600 mb-4 ${loading ? 'animate-spin' : ''}`} />
-                        <p className="text-slate-400 font-mono text-sm">
-                            {status ? "ENGINE CONNECTED" : "CONNECTING TO CORE..."}
-                        </p>
-                        <div className="mt-4 w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500 w-2/3 animate-pulse"></div>
+
+                    {/* Status Display Card */}
+                    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 h-64 flex flex-col items-center justify-center text-center backdrop-blur-sm relative overflow-hidden group mb-6">
+                        <div className={`absolute inset-0 bg-gradient-to-br transition-opacity opacity-50 duration-1000 ${systemMode === 'LIVE' ? 'from-emerald-500/10 to-blue-500/10' :
+                            systemMode === 'SIMULATION' ? 'from-purple-500/10 to-blue-500/10' :
+                                'from-blue-500/5 to-purple-500/5'
+                            }`}></div>
+
+                        <div className="relative z-10">
+                            {systemMode === 'IDLE' && <Server className="w-12 h-12 text-slate-600 mb-4" />}
+                            {systemMode === 'PREFLIGHT' && <RefreshCw className="w-12 h-12 text-yellow-500 mb-4 animate-spin" />}
+                            {systemMode === 'SIMULATION' && <Zap className="w-12 h-12 text-purple-400 mb-4 animate-pulse" />}
+                            {systemMode === 'LIVE' && <Activity className="w-12 h-12 text-emerald-400 mb-4 animate-pulse" />}
+
+                            <h3 className="text-xl font-black text-white tracking-widest mb-1">{systemMode} MODE</h3>
+                            <p className="text-slate-400 font-mono text-xs uppercase mb-4">
+                                {systemMode === 'IDLE' ? "SYSTEM READY FOR INITIALIZATION" :
+                                    systemMode === 'PREFLIGHT' ? `VERIFYING PROTOCOLS: ${preflightProgress}%` :
+                                        systemMode === 'SIMULATION' ? "VIRTUAL EXECUTION ENV ACTIVE" :
+                                            "LIVE MEV EXECUTION ACTIVE"}
+                            </p>
+
+                            <div className="w-48 h-1 bg-slate-800 rounded-full overflow-hidden mx-auto">
+                                <div
+                                    className={`h-full transition-all duration-300 ${systemMode === 'PREFLIGHT' ? 'bg-yellow-500' :
+                                        systemMode === 'SIMULATION' ? 'bg-purple-500' :
+                                            systemMode === 'LIVE' ? 'bg-emerald-500' : 'bg-slate-700'
+                                        }`}
+                                    style={{
+                                        width:
+                                            systemMode === 'PREFLIGHT' ? `${preflightProgress}%` :
+                                                systemMode === 'SIMULATION' ? '100%' :
+                                                    systemMode === 'LIVE' ? '100%' : '0%'
+                                    }}
+                                ></div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="mt-6 bg-gradient-to-r from-slate-900 to-slate-800 border border-slate-700 p-6 rounded-xl">
-                        <h3 className="text-sm font-bold text-slate-300 mb-2">QUICK ACTIONS</h3>
-                        <div className="grid grid-cols-2 gap-3">
-                            <button className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 p-2 rounded text-xs font-bold transition-all">
-                                START SCAN
-                            </button>
-                            <button className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 p-2 rounded text-xs font-bold transition-all">
-                                HALT ENGINE
-                            </button>
+                    {/* Mode Control Panel */}
+                    <div className="bg-gradient-to-r from-slate-900 to-slate-800 border border-slate-700 p-6 rounded-xl">
+                        <h3 className="text-sm font-bold text-slate-300 mb-4 flex items-center justify-between">
+                            <span>CONTROL DECK</span>
+                            <span className="text-[10px] text-slate-500 font-mono">SEQ_GATED_V2</span>
+                        </h3>
+
+                        <div className="space-y-3">
+                            {/* Preflight Step */}
+                            <div className="relative">
+                                <button
+                                    onClick={startPreflight}
+                                    className={`w-full p-3 rounded flex items-center justify-between text-xs font-bold border transition-all ${systemMode === 'PREFLIGHT'
+                                        ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400 animate-pulse'
+                                        : 'bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20'
+                                        }`}
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                                        1. INITIATE PREFLIGHT
+                                    </span>
+                                    {preflightProgress === 100 && <ShieldCheck size={14} />}
+                                </button>
+                            </div>
+
+                            {/* Simulation Step */}
+                            <div className="relative">
+                                <section className="w-full">
+                                    <button
+                                        onClick={startSimulation}
+                                        className={`w-full p-3 rounded flex items-center justify-between text-xs font-bold border transition-all ${systemMode === 'SIMULATION'
+                                            ? 'bg-purple-500/20 border-purple-500/50 text-purple-300'
+                                            : 'bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500/20'
+                                            }`}
+                                    >
+                                        <span className="flex items-center gap-2">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                                            2. START SIMULATION
+                                        </span>
+                                        {systemMode === 'SIMULATION' && <RefreshCw size={14} className="animate-spin" />}
+                                    </button>
+                                </section>
+                            </div>
+
+                            {/* Live Step */}
+                            <div className="relative">
+                                {systemMode === 'LIVE' ? (
+                                    <button
+                                        onClick={abortLive}
+                                        className="w-full p-3 rounded flex items-center justify-center gap-2 text-xs font-bold border bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30 transition-all"
+                                    >
+                                        <ShieldCheck size={14} /> ABORT LIVE EXECUTION
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={goLive}
+                                        className={`w-full p-3 rounded flex items-center justify-between text-xs font-bold border transition-all ${systemMode === 'LIVE'
+                                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                            : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                                            }`}
+                                    >
+                                        <span className="flex items-center gap-2">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                                            3. ENGAGE LIVE MODE
+                                        </span>
+                                        <Zap size={14} className="text-slate-600" />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
