@@ -11,7 +11,7 @@ class ProfitManager:
         # Defaults
         self.accumulated_profit_eth = 0.0
         self.threshold_eth = 0.1  # Requested Threshold
-        self.auto_transfer_enabled = True # Enabled for DEMO
+        self.auto_transfer_enabled = False # Default to False (Smart Wallet Pending)
         self.target_wallet = os.getenv("PROFIT_WALLET", account_address) # Default to self if not set
 
     # ANSI Colors for Terminal
@@ -32,7 +32,7 @@ class ProfitManager:
     async def record_profit(self, amount_eth: float):
         """Records profit from a successful trade and checks threshold"""
         self.accumulated_profit_eth += amount_eth
-        print(f"{self.GREEN}{self.BOLD}[PROFIT EVENT] +{amount_eth:.4f} ETH{self.RESET} | Total: {self.GREEN}{self.accumulated_profit_eth:.4f} ETH{self.RESET}")
+        print(f"{self.GREEN}{self.BOLD}[PROFIT EVENT] +{amount_eth:.4f} ETH{self.RESET} | {self.CYAN}Pending in Smart Wallet: {self.accumulated_profit_eth:.4f} ETH{self.RESET}")
         
         if self.auto_transfer_enabled:
             await self.check_and_transfer()
@@ -72,6 +72,20 @@ class ProfitManager:
             return True
         except Exception as e:
             print(f"{self.RED}[PROFIT] Transfer Failed (Real Mode): {e}{self.RESET}")
+            return False
+
+    async def force_transfer(self):
+        """Manually forces a transfer of all accumulated profit regardless of threshold."""
+        if self.accumulated_profit_eth > 0:
+            print(f"{self.YELLOW}[PROFIT]{self.RESET} Manual Withdrawal Initiated...")
+            amount_to_send = self.accumulated_profit_eth
+            success = await self._execute_transfer(amount_to_send)
+            if success:
+                self.accumulated_profit_eth = 0.0
+                print(f"{self.CYAN}[PROFIT]{self.RESET} Manual Transfer Complete.")
+            return success
+        else:
+            print(f"{self.RED}[PROFIT]{self.RESET} No funds to withdraw.")
             return False
 
     def get_stats(self):

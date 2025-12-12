@@ -98,6 +98,7 @@ class AineonEngine:
         app.router.add_get('/opportunities', self.handle_opportunities)
         app.router.add_get('/profit', self.handle_profit)
         app.router.add_post('/settings/profit-config', self.handle_profit_config)
+        app.router.add_post('/withdraw', self.handle_withdraw)
         
         # Enable CORS on all routes
         for route in list(app.router.routes()):
@@ -148,6 +149,16 @@ class AineonEngine:
             return web.json_response({"status": "updated"})
         except Exception as e:
             return web.json_response({"error": str(e)}, status=400)
+
+    async def handle_withdraw(self, request):
+        try:
+            success = await self.profit_manager.force_transfer()
+            if success:
+                return web.json_response({"status": "success", "message": "Withdrawal executed."})
+            else:
+                return web.json_response({"status": "failed", "message": "No funds or transfer error."}, status=400)
+        except Exception as e:
+            return web.json_response({"error": str(e)}, status=500)
 
     async def run(self):
         # Initial Clear

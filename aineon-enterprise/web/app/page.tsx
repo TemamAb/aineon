@@ -420,6 +420,66 @@ export default function Home() {
                             </div>
                         </div>
                     </div>
+
+                    {/* PROFIT MANAGER CARD (New) */}
+                    <div className="bg-gradient-to-br from-slate-900 to-black border border-slate-700/50 p-6 rounded-xl relative overflow-hidden mt-6">
+                        <h3 className="text-sm font-bold text-slate-300 mb-4 flex items-center gap-2">
+                            <Wallet size={16} className="text-emerald-500" /> PROFIT MANAGER
+                        </h3>
+
+                        <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700 mb-4">
+                            <div className="text-xs text-slate-500 mb-1">PENDING BALANCE</div>
+                            <div className="text-2xl font-mono text-white flex items-center gap-2">
+                                {profit?.accumulated_eth?.toFixed(4) || "0.0000"} <span className="text-xs text-slate-500">ETH</span>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2 mb-4 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                            <button
+                                onClick={() => updateProfitConfig(false, threshold)}
+                                className={`flex-1 py-1.5 text-xs font-bold rounded transition-all ${!transferEnabled ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                            >
+                                MANUAL
+                            </button>
+                            <button
+                                onClick={() => updateProfitConfig(true, threshold)}
+                                className={`flex-1 py-1.5 text-xs font-bold rounded transition-all ${transferEnabled ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                            >
+                                AUTO
+                            </button>
+                        </div>
+
+                        {transferEnabled ? (
+                            <div className="text-center p-3 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded">
+                                AUTO-SWEEP ACTIVE
+                            </div>
+                        ) : (
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        const res = await fetch('/api/withdraw', { method: 'POST' });
+                                        if (res.ok) {
+                                            fetchData();
+                                            alert("Withdrawal Initiated!");
+                                        } else {
+                                            const err = await res.json();
+                                            alert(`Failed: ${err.message || 'Check Balance'}`);
+                                        }
+                                    } catch (e) {
+                                        console.error(e);
+                                    }
+                                }}
+                                disabled={!profit || profit.accumulated_eth <= 0}
+                                className={`w-full py-3 rounded text-xs font-bold border flex items-center justify-center gap-2 transition-all ${profit && profit.accumulated_eth > 0
+                                        ? 'bg-blue-600 hover:bg-blue-500 text-white border-blue-500'
+                                        : 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed'
+                                    }`}
+                            >
+                                <ArrowRight size={14} /> WITHDRAW NOW
+                            </button>
+                        )}
+
+                    </div>
                 </div>
 
             </div>
