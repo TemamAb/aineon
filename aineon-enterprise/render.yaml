@@ -1,6 +1,10 @@
 services:
   - type: web
-    name: aineon-enterprise
+    name: aineon-flashloan
     env: docker
+    region: oregon
+    plan: free
     dockerfilePath: ./Dockerfile
     dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true

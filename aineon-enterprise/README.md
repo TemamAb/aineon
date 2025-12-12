@@ -1,3 +1,13 @@
-# AINEON Enterprise Platform - Node.js Server
-## Deployment Status
-✅ Configured for Render.com as Node.js application
+# AINEON Flashloan Platform
+
+Deployed on Render.com with Docker.
+
+## Endpoints
+- `/` - API status
+- `/health` - Health check
+
+## Local Development
+\`\`\`bash
+npm install
+npm start
+\`\`\`
