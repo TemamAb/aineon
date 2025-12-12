@@ -1,5 +1,26 @@
-.env
-__pycache__/
-*.pyc
+# Dependencies
 node_modules/
+*.log
+
+# Environment
+.env
+.env.local
+
+# Build outputs
+dist/
+build/
 .next/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Render
+.render/
