@@ -148,18 +148,21 @@ class AineonEngine:
 
         while True:
             try:
-                # Mock profit generation for demo
-                await self.profit_manager.record_profit(0.01) # Simulate 0.01 ETH profit per sec
-                
-                # Mock scanning loop for robustness if deps are missing
-                # Parallel scanning for opportunities
-                # tasks = [
-                #    self.scan_dex_arbitrage(),
-                #    self.scan_cross_chain_opportunities(),
-                #    self.scan_mev_opportunities()
-                # ]
-                # results = await asyncio.gather(*tasks, return_exceptions=True)
-                pass # Main loop keeps running
+                # Real-Time Parallel Scanning
+                tasks = [
+                   self.scan_dex_arbitrage(),
+                   self.scan_cross_chain_opportunities(),
+                   self.scan_mev_opportunities()
+                ]
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+
+                for result in results:
+                    if isinstance(result, Exception):
+                        continue
+                    opportunity_found, trade_params = result
+                    if opportunity_found:
+                        await self.execute_enhanced_trade(trade_params)
+
             except Exception as e:
                 print(f"[ERROR] Cycle: {e}")
             
@@ -261,12 +264,10 @@ class AineonEngine:
 
     def construct_enhanced_tx(self, params):
         """Construct enhanced transaction with multi-hop paths"""
-        return {
-            "sender": self.account_address,
-            "nonce": 0,
-            "callData": "0x...",
-            "optimized_path": params
-        }
+        nonce = self.w3.eth.get_transaction_count(self.account_address)
+        # In a real implementation, callData would be the encoded function call to the Arbitrage Contract
+        call_data = "0x" 
+        return self.paymaster.build_user_op(self.account_address, call_data, nonce)
 
 class RiskManager:
     def __init__(self):
