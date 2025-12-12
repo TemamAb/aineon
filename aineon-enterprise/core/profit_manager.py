@@ -10,7 +10,7 @@ class ProfitManager:
         
         # Defaults
         self.accumulated_profit_eth = 0.0
-        self.threshold_eth = 0.5  # Default threshold
+        self.threshold_eth = 0.01  # Default threshold
         self.auto_transfer_enabled = False
         self.target_wallet = os.getenv("PROFIT_WALLET", account_address) # Default to self if not set
 
@@ -41,32 +41,29 @@ class ProfitManager:
                 print(f"[PROFIT] Transfer Complete. Resetting accumulator.")
 
     async def _execute_transfer(self, amount_eth: float):
-        """Executes the actual ETH transfer (Simulated for now if no gas)"""
+        """Executes the actual ETH transfer"""
         try:
-            # Logic to send ETH
-            # In a real scenario: construct tx, sign, send
             print(f">>> SENDING {amount_eth:.4f} ETH to {self.target_wallet} <<<")
             
-            # Simulation delay
-            await asyncio.sleep(1) 
+            nonce = self.w3.eth.get_transaction_count(self.account_address)
+            gas_price = self.w3.eth.gas_price
             
-            # Here we would normally do:
-            # nonce = self.w3.eth.get_transaction_count(self.account_address)
-            # tx = {
-            #     'to': self.target_wallet,
-            #     'value': self.w3.to_wei(amount_eth, 'ether'),
-            #     'gas': 21000,
-            #     'gasPrice': self.w3.eth.gas_price,
-            #     'nonce': nonce,
-            #     'chainId': self.w3.eth.chain_id
-            # }
-            # signed = self.w3.eth.account.sign_transaction(tx, self.private_key)
-            # tx_hash = self.w3.eth.send_raw_transaction(signed.rawTransaction)
+            tx = {
+                'to': self.target_wallet,
+                'value': self.w3.to_wei(amount_eth, 'ether'),
+                'gas': 21000,
+                'gasPrice': gas_price,
+                'nonce': nonce,
+                'chainId': self.w3.eth.chain_id
+            }
             
-            print(f">>> TRANSFER SUCCESS: 0xSIMULATED_HASH_123456789")
+            signed = self.w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = self.w3.eth.send_raw_transaction(signed.rawTransaction)
+            
+            print(f">>> TRANSFER SUCCESS: {self.w3.to_hex(tx_hash)}")
             return True
         except Exception as e:
-            print(f"[PROFIT] Transfer Failed: {e}")
+            print(f"[PROFIT] Transfer Failed (Real Mode): {e}")
             return False
 
     def get_stats(self):

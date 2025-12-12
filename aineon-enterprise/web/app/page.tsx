@@ -37,7 +37,7 @@ export default function Home() {
 
     // Config State
     const [transferEnabled, setTransferEnabled] = useState(false);
-    const [threshold, setThreshold] = useState("0.5");
+    const [threshold, setThreshold] = useState("0.01");
 
     const fetchData = async () => {
         try {
