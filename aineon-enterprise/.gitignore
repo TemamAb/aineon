@@ -1,27 +1,8 @@
-# Dependencies
 node_modules/
-*.log
-
-# Environment
 .env
-.env.local
-
-# Build outputs
+*.log
+.DS_Store
+.next/
 dist/
 build/
-.next/
-out/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Render
 .render/
-node_modules/

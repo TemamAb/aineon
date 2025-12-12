@@ -1,28 +1,26 @@
 const express = require('express');
-const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
 
-// Middleware
-app.use(express.json());
-app.use(express.static('public'));
-
-// Basic route
 app.get('/', (req, res) => {
   res.json({
     message: 'AINEON Enterprise Platform API',
     status: 'running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    port: PORT
   });
 });
 
-// Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    service: 'aineon-enterprise'
+  });
 });
 
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`íº€ AINEON Server running on port ${PORT}`);
-  console.log(`í³¡ Health check: http://0.0.0.0:${PORT}/health`);
+app.listen(PORT, HOST, () => {
+  console.log(`íº€ Server running on http://${HOST}:${PORT}`);
+  console.log(`âœ… Health check: http://${HOST}:${PORT}/health`);
 });
