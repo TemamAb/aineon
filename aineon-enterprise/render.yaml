@@ -1,10 +1,15 @@
 services:
   - type: web
-    name: aineon-flashloan
+    name: aineon-dashboard
     env: docker
     region: oregon
     plan: free
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    healthCheckPath: /health
+    healthCheckPath: /
     autoDeploy: true
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: http://localhost:8080
+      - key: NODE_ENV
+        value: production
