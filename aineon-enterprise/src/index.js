@@ -3,15 +3,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
-  res.json({ 
-    message: 'AINEON Enterprise Platform',
-    status: 'running',
-    timestamp: new Date().toISOString()
-  });
-});
-
-app.get('/health', (req, res) => {
-  res.json({ status: 'healthy' });
+  res.json({ message: 'AINEON Running', status: 'ok' });
 });
 
 app.listen(PORT, '0.0.0.0', () => {

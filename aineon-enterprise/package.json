@@ -1,7 +1,6 @@
 {
   "name": "aineon-enterprise",
   "version": "1.0.0",
-  "description": "AINEON Enterprise Platform",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js"

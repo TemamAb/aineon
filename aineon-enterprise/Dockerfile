@@ -1,31 +1,7 @@
-# Use Node.js 18 Alpine as base image
-FROM node:18-alpine
-
-# Set working directory
+]633;E;{ echo "FROM node:18-alpine"\x3b echo "WORKDIR /app"\x3b echo "COPY package*.json ./"\x3b echo "RUN npm install"\x3b echo "COPY . ."\x3b echo "EXPOSE 3000"\x3b echo "CMD [\\"npm\\", \\"start\\"]"\x3b } > Dockerfile;b765ca6a-28f5-42d7-96c8-d606f3f9a6ac]633;CFROM node:18-alpine
 WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
-
-# Install dependencies
-RUN npm ci --only=production
-
-# Copy source code
+RUN npm install
 COPY . .
-
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
-
-# Switch to non-root user
-USER nodejs
-
-# Expose port 3000
 EXPOSE 3000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
-
-# Start the application
 CMD ["npm", "start"]
