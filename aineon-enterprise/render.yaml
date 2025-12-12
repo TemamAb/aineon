@@ -1,35 +1,6 @@
 services:
-  # 1. CORE ENGINE (Python)
   - type: web
-    name: aineon-core
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: python core/main.py
-    plan: starter
-    envVars:
-      - key: PORT
-        value: 10000
-      - key: PYTHON_VERSION
-        value: 3.10.12
-      - key: ETH_RPC_URL
-        sync: false
-      - key: PRIVATE_KEY
-        sync: false
-      - key: PIMLICO_API_KEY
-        sync: false
-      - key: PAYMASTER_URL
-        sync: false
-
-  # 2. DASHBOARD (Next.js)
-  - type: web
-    name: aineon-web
-    env: docker
-    dockerContext: ./web
-    dockerfilePath: ./web/Dockerfile
-    plan: starter
-    envVars:
-      - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: aineon-core
-          property: host
+    name: aineon-enterprise
+    env: node
+    buildCommand: cd src && npm install
+    startCommand: cd src && npm run start
