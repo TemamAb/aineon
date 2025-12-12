@@ -23,7 +23,9 @@ Write-Host ">> [2/5] VALIDATING CORE ENGINE..." -ForegroundColor Cyan
 if (-not (Test-Path "core")) { New-Item -Path "core" -ItemType Directory -Force | Out-Null }
 if (-not (Test-Path "core\infrastructure")) { New-Item -Path "core\infrastructure" -ItemType Directory -Force | Out-Null }
 
-$MainPyContent = @"
+# Only create main.py if it doesn't exist to avoid overwriting user changes
+if (-not (Test-Path "core\main.py")) {
+    $MainPyContent = @"
 import os
 import asyncio
 from web3 import Web3
@@ -48,7 +50,10 @@ if __name__ == "__main__":
     engine = AineonEngine()
     asyncio.run(engine.run())
 "@
-Set-Content -Path "core\main.py" -Value $MainPyContent -Encoding UTF8
+    Set-Content -Path "core\main.py" -Value $MainPyContent -Encoding UTF8
+} else {
+    Write-Host "✅ main.py already exists, skipping overwrite" -ForegroundColor Green
+}
 
 # 3. Fix Paymaster
 $PaymasterContent = @"
