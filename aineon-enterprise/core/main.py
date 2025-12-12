@@ -8,15 +8,17 @@ import aiohttp_cors
 import numpy as np
 from web3 import Web3
 from dotenv import load_dotenv
+from dotenv import load_dotenv
 from infrastructure.paymaster import PimlicoPaymaster
+from profit_manager import ProfitManager
 # from strategies.jit_liquidity import JITManager # Placeholder for now if file doesn't exist
 # from strategies.solver import CowSolver # Placeholder
 
 try:
     import tensorflow as tf
     HAS_TF = True
-except ImportError:
-    print(">> [WARNING] TensorFlow not found. Running in heuristic mode.")
+except Exception as e:
+    print(f">> [WARNING] TensorFlow/Keras import failed: {e}. Running in heuristic mode.")
     HAS_TF = False
 
 load_dotenv()
@@ -46,9 +48,13 @@ class AineonEngine:
         }
 
         # 5. Risk Management
+        # 5. Risk Management
         self.risk_manager = RiskManager()
+        
+        # 6. Profit Manager
+        self.profit_manager = ProfitManager(self.w3, self.account_address, self.private_key)
 
-        # 6. Parallel Processing for Scalability
+        # 7. Parallel Processing for Scalability
         self.executor_pool = asyncio.Semaphore(10)  # Limit concurrent operations
 
     def load_ai_model(self):
@@ -73,7 +79,10 @@ class AineonEngine:
         # API Routes
         app.router.add_get('/status', self.handle_status)
         app.router.add_get('/opportunities', self.handle_opportunities)
+        app.router.add_get('/status', self.handle_status)
+        app.router.add_get('/opportunities', self.handle_opportunities)
         app.router.add_get('/profit', self.handle_profit)
+        app.router.add_post('/settings/profit-config', self.handle_profit_config)
         
         # Enable CORS on all routes
         for route in list(app.router.routes()):
@@ -104,11 +113,26 @@ class AineonEngine:
         })
 
     async def handle_profit(self, request):
+        stats = self.profit_manager.get_stats()
         return web.json_response({
-            "total_pnl": 15420.50,
+            "total_pnl": 15420.50 + (stats['accumulated_eth'] * 2500), # Mock conversion
+            "accumulated_eth": stats['accumulated_eth'],
+            "threshold_eth": stats['threshold_eth'],
+            "auto_transfer": stats['auto_transfer_enabled'],
             "active_trades": 3,
             "gas_saved": 850.00
         })
+
+    async def handle_profit_config(self, request):
+        try:
+            data = await request.json()
+            self.profit_manager.update_config(
+                enabled=data.get('enabled', False),
+                threshold=data.get('threshold', 0.5)
+            )
+            return web.json_response({"status": "updated"})
+        except Exception as e:
+            return web.json_response({"error": str(e)}, status=400)
 
     async def run(self):
         print(">> AINEON 0.001% TIER ENGINE STARTED")
@@ -124,6 +148,9 @@ class AineonEngine:
 
         while True:
             try:
+                # Mock profit generation for demo
+                await self.profit_manager.record_profit(0.01) # Simulate 0.01 ETH profit per sec
+                
                 # Mock scanning loop for robustness if deps are missing
                 # Parallel scanning for opportunities
                 # tasks = [

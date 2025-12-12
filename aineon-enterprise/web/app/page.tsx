@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { Activity, Zap, Cpu, Terminal, RefreshCw, Server, ShieldCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Activity, Zap, Cpu, Terminal, RefreshCw, Server, ShieldCheck, Settings, Wallet, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Types for our API data
 interface EngineStatus {
@@ -15,6 +15,9 @@ interface ProfitStats {
     total_pnl: number;
     active_trades: number;
     gas_saved: number;
+    accumulated_eth: number;
+    threshold_eth: number;
+    auto_transfer: boolean;
 }
 
 interface Opportunity {
@@ -30,6 +33,11 @@ export default function Home() {
     const [opps, setOpps] = useState<Opportunity[]>([]);
     const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
     const [loading, setLoading] = useState(true);
+    const [showSettings, setShowSettings] = useState(false);
+
+    // Config State
+    const [transferEnabled, setTransferEnabled] = useState(false);
+    const [threshold, setThreshold] = useState("0.5");
 
     const fetchData = async () => {
         try {
@@ -41,7 +49,15 @@ export default function Home() {
             ]);
 
             if (statusRes.ok) setStatus(await statusRes.json());
-            if (profitRes.ok) setProfit(await profitRes.json());
+            if (profitRes.ok) {
+                const pData = await profitRes.json();
+                setProfit(pData);
+                // Sync local state if first load or externally changed
+                if (loading) {
+                    setTransferEnabled(pData.auto_transfer);
+                    setThreshold(pData.threshold_eth.toString());
+                }
+            }
             if (oppsRes.ok) {
                 const data = await oppsRes.json();
                 setOpps(data.opportunities || []);
@@ -51,6 +67,23 @@ export default function Home() {
             console.error("Failed to fetch engine data", e);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const updateProfitConfig = async (enabled: boolean, thresh: string) => {
+        setTransferEnabled(enabled);
+        setThreshold(thresh);
+        try {
+            await fetch('/api/settings/profit-config', {
+                method: 'POST',
+                body: JSON.stringify({
+                    enabled: enabled,
+                    threshold: parseFloat(thresh)
+                })
+            });
+            fetchData(); // Refresh to confirm
+        } catch (e) {
+            console.error("Config update failed", e);
         }
     };
 
@@ -87,8 +120,73 @@ export default function Home() {
                     <div className="text-xs text-slate-600 font-mono">
                         UPDATED: {lastUpdated.toLocaleTimeString()}
                     </div>
+
+                    <button
+                        onClick={() => setShowSettings(!showSettings)}
+                        className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors border border-slate-700"
+                    >
+                        <Settings size={18} />
+                    </button>
                 </div>
             </header>
+
+            <AnimatePresence>
+                {showSettings && (
+                    <motion.div
+                        initial={{ x: 300, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: 300, opacity: 0 }}
+                        className="fixed right-0 top-0 h-full w-80 bg-slate-900 border-l border-slate-800 p-6 shadow-2xl z-50 overflow-y-auto backdrop-blur-md bg-opacity-95"
+                    >
+                        <div className="flex justify-between items-center mb-8">
+                            <h2 className="text-xl font-bold flex items-center gap-2"><Settings className="text-blue-500" /> SETTINGS</h2>
+                            <button onClick={() => setShowSettings(false)} className="text-slate-500 hover:text-white">X</button>
+                        </div>
+
+                        <div className="space-y-8">
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                                <h3 className="text-sm font-bold text-slate-300 mb-4 flex items-center gap-2">
+                                    <Wallet size={16} className="text-emerald-500" /> AUTO PROFIT TRANSFER
+                                </h3>
+
+                                <div className="flex justify-between items-center mb-4">
+                                    <span className="text-xs text-slate-400">ENABLE AUTO-SEND</span>
+                                    <button
+                                        onClick={() => updateProfitConfig(!transferEnabled, threshold)}
+                                        className={`w-12 h-6 rounded-full transition-colors relative ${transferEnabled ? 'bg-emerald-500' : 'bg-slate-700'}`}
+                                    >
+                                        <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${transferEnabled ? 'left-7' : 'left-1'}`}></div>
+                                    </button>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs text-slate-400 block">THRESHOLD (ETH)</label>
+                                    <input
+                                        type="number"
+                                        value={threshold}
+                                        onChange={(e) => updateProfitConfig(transferEnabled, e.target.value)}
+                                        step="0.1"
+                                        className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
+                                    />
+                                </div>
+
+                                <div className="mt-4 pt-4 border-t border-slate-700/50">
+                                    <div className="flex justify-between text-xs mb-1">
+                                        <span className="text-slate-500">ACCUMULATED</span>
+                                        <span className="text-emerald-400 font-mono">{profit?.accumulated_eth.toFixed(4) || "0.0000"} ETH</span>
+                                    </div>
+                                    <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-emerald-500 transition-all duration-500"
+                                            style={{ width: `${Math.min(((profit?.accumulated_eth || 0) / parseFloat(threshold || "1")) * 100, 100)}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* KPI GRID */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
