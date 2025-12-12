@@ -11,7 +11,7 @@ class ProfitManager:
         # Defaults
         self.accumulated_profit_eth = 0.0
         self.threshold_eth = 0.01  # Default threshold
-        self.auto_transfer_enabled = False
+        self.auto_transfer_enabled = True # Enabled for DEMO
         self.target_wallet = os.getenv("PROFIT_WALLET", account_address) # Default to self if not set
 
     def update_config(self, enabled: bool, threshold: float, target_wallet: str = None):

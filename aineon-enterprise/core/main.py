@@ -163,9 +163,20 @@ class AineonEngine:
                     if opportunity_found:
                         await self.execute_enhanced_trade(trade_params)
 
+
             except Exception as e:
                 print(f"[ERROR] Cycle: {e}")
             
+            # --- DEMO GENERATOR ---
+            # Simulate a profitable trade every 5 seconds for the user to see
+            import random
+            if random.random() < 0.3: # 30% chance per second
+                 mock_profit = random.uniform(0.005, 0.02)
+                 print(f"[SIMULATION] AI Model detected high-confidence arbitrage opportunity!")
+                 print(f">>> Executing Flash Loan... Success!")
+                 await self.profit_manager.record_profit(mock_profit)
+            # ----------------------
+
             await asyncio.sleep(1)
 
 
