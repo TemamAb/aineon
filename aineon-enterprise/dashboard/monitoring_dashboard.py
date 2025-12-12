@@ -8,6 +8,8 @@ import websockets
 import json
 import threading
 import time
+import requests
+import os
 
 class MonitoringDashboard:
     def __init__(self):
@@ -15,6 +17,7 @@ class MonitoringDashboard:
         self.performance_metrics = {}
         self.risk_metrics = {}
         self.websocket_url = "ws://localhost:8765"  # For real-time updates
+        self.api_base_url = os.getenv("API_BASE_URL", "http://localhost:8080")
 
     def run_dashboard(self):
         """Run the Streamlit dashboard"""
@@ -49,7 +52,50 @@ class MonitoringDashboard:
         status_color = "🟢" if self.get_engine_status() else "🔴"
         st.sidebar.metric("Engine Status", status_color)
 
+        # Profit Manager Section
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("💰 Profit Manager")
+        
+        profit_data = self.get_profit_data()
+        
+        # Display pending balance with green accent
+        st.sidebar.markdown(
+            f"<h2 style='color: #34D399; text-shadow: 0 0 10px rgba(52, 211, 153, 0.5);'>"
+            f"+{profit_data['accumulated_eth']:.4f} ETH</h2>",
+            unsafe_allow_html=True
+        )
+        st.sidebar.caption("PENDING BALANCE")
+        
+        # Auto/Manual Mode Toggle
+        transfer_mode = st.sidebar.radio(
+            "Transfer Mode",
+            ["Manual", "Auto"],
+            index=0 if not profit_data['auto_transfer'] else 1,
+            horizontal=True
+        )
+        
+        # Update mode if changed
+        if (transfer_mode == "Auto") != profit_data['auto_transfer']:
+            self.update_profit_config(transfer_mode == "Auto", profit_data['threshold_eth'])
+            st.rerun()
+        
+        # Manual Withdraw Button or Auto Status
+        if transfer_mode == "Manual":
+            if st.sidebar.button("🚀 WITHDRAW NOW", 
+                               disabled=profit_data['accumulated_eth'] <= 0,
+                               use_container_width=True):
+                if self.execute_manual_withdrawal():
+                    st.sidebar.success("Withdrawal Initiated!")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.sidebar.error("Withdrawal Failed")
+        else:
+            st.sidebar.success("✅ AUTO-SWEEP ACTIVE")
+            st.sidebar.caption(f"Threshold: {profit_data['threshold_eth']:.4f} ETH")
+
         # Quick stats
+        st.sidebar.markdown("---")
         col1, col2 = st.sidebar.columns(2)
         with col1:
             st.metric("24h Profit", f"${self.get_24h_profit():,.2f}")
@@ -173,32 +219,76 @@ class MonitoringDashboard:
             st.success("Settings saved successfully!")
 
     # Helper methods for data retrieval
+    def get_profit_data(self):
+        """Fetch real profit data from API"""
+        try:
+            response = requests.get(f"{self.api_base_url}/profit", timeout=5)
+            if response.ok:
+                return response.json()
+        except:
+            pass
+        # Fallback
+        return {
+            'accumulated_eth': 0.0,
+            'threshold_eth': 0.1,
+            'auto_transfer': False,
+            'total_pnl': 0.0,
+            'active_trades': 0,
+            'gas_saved': 0.0
+        }
+    
+    def update_profit_config(self, enabled, threshold):
+        """Update profit configuration via API"""
+        try:
+            response = requests.post(
+                f"{self.api_base_url}/settings/profit-config",
+                json={'enabled': enabled, 'threshold': threshold},
+                timeout=5
+            )
+            return response.ok
+        except:
+            return False
+    
+    def execute_manual_withdrawal(self):
+        """Execute manual withdrawal via API"""
+        try:
+            response = requests.post(f"{self.api_base_url}/withdraw", timeout=10)
+            return response.ok
+        except:
+            return False
+    
     def get_engine_status(self):
-        return True  # Mock implementation
+        try:
+            response = requests.get(f"{self.api_base_url}/status", timeout=5)
+            return response.ok
+        except:
+            return False
 
     def get_24h_profit(self):
-        return 1250.75  # Mock data
+        profit_data = self.get_profit_data()
+        return profit_data.get('total_pnl', 0.0)
 
     def get_active_trades(self):
-        return 3
+        profit_data = self.get_profit_data()
+        return profit_data.get('active_trades', 0)
 
     def check_risk_alerts(self):
         return False
 
     def get_total_pnl(self):
-        return 15420.50
+        return self.get_24h_profit()
 
     def get_pnl_change(self):
-        return 12.5
+        return 12.5  # TODO: Calculate from historical data
 
     def get_win_rate(self):
-        return 78.5
+        return 78.5  # TODO: Calculate from trade history
 
     def get_avg_trade_size(self):
-        return 50000
+        return 50000  # TODO: Calculate from trade history
 
     def get_sharpe_ratio(self):
-        return 2.34
+        return 2.34  # TODO: Calculate from performance data
 
     def create_pnl_chart(self):
         # Mock P&L data

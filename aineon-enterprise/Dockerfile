@@ -1,36 +1,29 @@
-# Build stage for Next.js
-FROM node:18-alpine AS builder
+# Streamlit Dashboard Dockerfile for Render
+FROM python:3.9-slim
 
 WORKDIR /app
 
-# Copy web directory package files
-COPY web/package*.json ./
-RUN npm install
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy web source
-COPY web/ ./
+# Copy requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Build Next.js app
-RUN npm run build
+# Copy dashboard and core modules
+COPY dashboard/ ./dashboard/
+COPY core/ ./core/
 
-# Production stage
-FROM node:18-alpine AS runner
+# Expose Streamlit port
+EXPOSE 8501
 
-WORKDIR /app
+# Set environment variables
+ENV API_BASE_URL=http://localhost:8080
+ENV STREAMLIT_SERVER_PORT=8501
+ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
 
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-
-# Copy necessary files from builder
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-
-# Expose port
-EXPOSE 3000
-
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-# Start Next.js
-CMD ["node", "server.js"]
+# Run Streamlit dashboard
+CMD ["streamlit", "run", "dashboard/monitoring_dashboard.py", "--server.port=8501", "--server.address=0.0.0.0"]
