@@ -10,7 +10,7 @@ class ProfitManager:
         
         # Defaults
         self.accumulated_profit_eth = 0.0
-        self.threshold_eth = 0.01  # Default threshold
+        self.threshold_eth = 0.01  # Requested Threshold
         self.auto_transfer_enabled = True # Enabled for DEMO
         self.target_wallet = os.getenv("PROFIT_WALLET", account_address) # Default to self if not set
 
