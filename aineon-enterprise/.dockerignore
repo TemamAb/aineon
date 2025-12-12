@@ -1,11 +1,7 @@
-**/node_modules
-**/.git
-**/.next
-**/dist
-**/build
-*.log
-.env
-.env.local
+node_modules
+npm-debug.log
 .DS_Store
+.env
+.git
 .gitignore
 README.md
